@@ -25,8 +25,8 @@ export interface Ask {
   title: string;
   /** Why you're being asked this, in one line. */
   because: string;
-  /** A real example, so nobody stares at a blank button. */
-  example: string;
+  /** Real examples, so nobody stares at a blank button. */
+  examples: string[];
 }
 
 export function askFor(mine: Curve, theirs: Curve): Ask {
@@ -47,8 +47,12 @@ export function askFor(mine: Curve, theirs: Curve): Ask {
         me < HEAVY
           ? "you already know what this feels like. that's why it lands."
           : "you've got room today. spend a bit of it.",
-      example:
-        "“this will pass. it's a learning. start harder tomorrow, and don't let some marks break your smile.”",
+      examples: [
+        "this will pass. it's a learning. start harder tomorrow, and don't let some marks break your smile.",
+        "honestly i failed the same paper twice. nobody remembers it except me. you'll be the only one who remembers this too.",
+        "you don't have to fix it tonight. eat something, sleep, and let tomorrow be a different day.",
+        "whatever happened today, you still showed up for it. i know that doesn't feel like much right now but it is.",
+      ],
     };
   }
 
@@ -58,8 +62,12 @@ export function askFor(mine: Curve, theirs: Curve): Ask {
       move: "share",
       title: "something went right today. tell them what.",
       because: "someone out there needs to hear that good things still happen.",
-      example:
-        "“i'm so happy today. two years without a job and today i finally got one. i really hope life gives you this too.”",
+      examples: [
+        "i'm so happy today. two years without a job and today i finally got one. i really hope life gives you this too.",
+        "my mum rang for absolutely no reason and i've been in a good mood since four o'clock.",
+        "someone i barely know remembered something i said months ago. tiny thing. made my week.",
+        "i finally sent the message i'd been scared to send for three weeks and it went fine. it usually goes fine.",
+      ],
     };
   }
 
@@ -68,12 +76,20 @@ export function askFor(mine: Curve, theirs: Curve): Ask {
     move: "comfort",
     title: "say something you'd want to hear. someone out there needs exactly that.",
     because: "it doesn't have to be advice. just kind.",
-    example:
-      "“you got through today. that counted, even if nobody saw it.”",
+    examples: [
+      "you got through today. that counted, even if nobody saw it.",
+      "nothing has to be resolved tonight. tomorrow gets its own go.",
+      "if today was mostly just getting through it, that's still doing it.",
+    ],
   };
 }
 
-/** The prompt a seed clip was recorded against, for showing on the receiving end. */
+/** Pick one example without a random call, so the same day shows the same one. */
+export function pickExample(ask: Ask, seed: number): string {
+  return ask.examples[Math.abs(Math.floor(seed)) % ask.examples.length];
+}
+
+/** The ask a clip was recorded against, for showing on the receiving end. */
 export function moveLabel(move: Move): string {
   if (move === "comfort") return "they were asked to say what they'd want to hear";
   if (move === "share") return "they were asked to share something good";
@@ -93,7 +109,11 @@ export function liftAsk(): Ask {
     move: "lift",
     title: "sing it. hum it. or just name the song that fixes a bad day.",
     because: "no words needed. badly sung counts more, honestly.",
-    example:
-      "“okay this is going to be rough but...” then thirty seconds of you butchering the chorus. or just: “put on Ilahi and go stand outside. trust me.”",
+    examples: [
+      "okay this is going to be rough but... (then thirty seconds of you butchering the chorus)",
+      "put on Ilahi and go stand outside for five minutes. trust me on this one.",
+      "watch Zindagi Na Milegi Dobara. skip to the deep sea bit. you'll be fine.",
+      "just hum something. anything. it works better than it has any right to.",
+    ],
   };
 }

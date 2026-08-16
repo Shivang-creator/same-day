@@ -1,15 +1,15 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { POINTS, SLOT_LABELS, colorAt, type Curve } from "@/lib/curve";
+import { NOW_LABEL, POINTS, SLOT_LABELS, colorAt, type Curve } from "@/lib/curve";
 
 const W = 320;
 const H = 180;
 const PAD_X = 26;
 const PAD_Y = 22;
 
-function xFor(i: number) {
-  return PAD_X + (i * (W - PAD_X * 2)) / (POINTS - 1);
+function xFor(i: number, n = POINTS) {
+  return PAD_X + (i * (W - PAD_X * 2)) / (n - 1);
 }
 function yFor(v: number) {
   return H - PAD_Y - v * (H - PAD_Y * 2);
@@ -21,7 +21,7 @@ function valueFor(y: number) {
 
 /** A smooth path through the five points, so a day reads as a curve not a zigzag. */
 function pathFor(curve: Curve): string {
-  const pts = curve.map((v, i) => [xFor(i), yFor(v)] as const);
+  const pts = curve.map((v, i) => [xFor(i, curve.length), yFor(v)] as const);
   let d = `M ${pts[0][0]} ${pts[0][1]}`;
   for (let i = 0; i < pts.length - 1; i++) {
     const [x0, y0] = pts[i];
@@ -38,10 +38,13 @@ export function CurveCanvas({
   readOnly = false,
   ghost,
   label,
+  onlyLast = false,
 }: {
   curve: Curve;
   onChange?: (c: Curve) => void;
   readOnly?: boolean;
+  /** The day already happened. When true only the final point can move. */
+  onlyLast?: boolean;
   /** A second curve drawn faintly underneath — used to show "before". */
   ghost?: Curve;
   label?: string;
@@ -52,6 +55,7 @@ export function CurveCanvas({
   const setPoint = useCallback(
     (i: number, clientY: number) => {
       if (readOnly || !onChange) return;
+      if (onlyLast && i !== curve.length - 1) return;
       const rect = svgRef.current?.getBoundingClientRect();
       if (!rect) return;
       const y = ((clientY - rect.top) / rect.height) * H;
@@ -59,7 +63,7 @@ export function CurveCanvas({
       next[i] = Math.round(valueFor(y) * 100) / 100;
       onChange(next);
     },
-    [curve, onChange, readOnly],
+    [curve, onChange, onlyLast, readOnly],
   );
 
   const move = useCallback(
@@ -74,11 +78,12 @@ export function CurveCanvas({
   const nudge = useCallback(
     (i: number, dir: number) => {
       if (readOnly || !onChange) return;
+      if (onlyLast && i !== curve.length - 1) return;
       const next = [...curve];
       next[i] = Math.max(0, Math.min(1, Math.round((next[i] + dir * 0.1) * 100) / 100));
       onChange(next);
     },
-    [curve, onChange, readOnly],
+    [curve, onChange, onlyLast, readOnly],
   );
 
   return (
@@ -96,7 +101,7 @@ export function CurveCanvas({
         <defs>
           <linearGradient id="curveGrad" x1="0" x2="1" y1="0" y2="0">
             {curve.map((v, i) => (
-              <stop key={i} offset={`${(i / (POINTS - 1)) * 100}%`} stopColor={colorAt(v)} />
+              <stop key={i} offset={`${(i / (curve.length - 1)) * 100}%`} stopColor={colorAt(v)} />
             ))}
           </linearGradient>
         </defs>
@@ -134,10 +139,10 @@ export function CurveCanvas({
 
         {curve.map((v, i) => (
           <g key={i}>
-            {!readOnly && (
-              // a generous invisible target — thumbs are not 6px wide
+            {!readOnly && (!onlyLast || i === curve.length - 1) && (
+              // a generous invisible target, because thumbs are not 6px wide
               <rect
-                x={xFor(i) - 22}
+                x={xFor(i, curve.length) - 22}
                 y={0}
                 width={44}
                 height={H}
@@ -151,9 +156,9 @@ export function CurveCanvas({
               />
             )}
             <circle
-              cx={xFor(i)}
+              cx={xFor(i, curve.length)}
               cy={yFor(v)}
-              r={dragging === i ? 8 : 6}
+              r={dragging === i ? 9 : onlyLast && i === curve.length - 1 ? 8 : 6}
               fill={colorAt(v)}
               stroke="var(--ground)"
               strokeWidth={2.5}
@@ -165,8 +170,8 @@ export function CurveCanvas({
 
       {!readOnly && (
         <div className="mt-1 flex justify-between px-1">
-          {SLOT_LABELS.map((slot, i) => (
-            <div key={slot} className="flex flex-col items-center gap-0.5">
+          {curve.map((_, i) => (SLOT_LABELS[i] ?? NOW_LABEL)).map((slot, i) => (
+            <div key={`${slot}-${i}`} className="flex flex-col items-center gap-0.5">
               <span className="text-[10px] uppercase tracking-wider opacity-45">{slot}</span>
               {/* keyboard path — the drag is not the only way in */}
               <div className="flex gap-0.5">

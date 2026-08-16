@@ -23,12 +23,13 @@ type State = "idle" | "recording" | "done" | "denied";
 export function Recorder({
   onDone,
 }: {
-  onDone: (reply: { data?: string; emoji: string; seconds: number }) => void;
+  onDone: (reply: { data?: string; emoji: string; text?: string; seconds: number }) => void;
 }) {
   const [state, setState] = useState<State>("idle");
   const [elapsed, setElapsed] = useState(0);
   const [emoji, setEmoji] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [text, setText] = useState("");
 
   const recRef = useRef<MediaRecorder | null>(null);
   const chunks = useRef<BlobPart[]>([]);
@@ -188,6 +189,41 @@ export function Recorder({
           </button>
         </div>
       </details>
+    </div>
+  );
+}
+
+/**
+ * The no-mic path.
+ *
+ * Voice is the default because it does the job better, but a single emoji is a
+ * shrug and nobody feels met by a shrug. So this takes a joke, a song, a film,
+ * or whatever you would have said out loud. Same exchange, typed.
+ */
+function TypedReply({
+  emoji,
+  setEmoji,
+  text,
+  setText,
+}: {
+  emoji: string | null;
+  setEmoji: (e: string) => void;
+  text: string;
+  setText: (t: string) => void;
+}) {
+  return (
+    <div className="flex w-full max-w-sm flex-col items-center gap-3">
+      <EmojiPad selected={emoji} onSelect={setEmoji} />
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value.slice(0, 240))}
+        rows={3}
+        aria-label="Type your reply"
+        placeholder="a joke, a song, a film, or just what you'd have said"
+        className="w-full resize-none rounded-2xl bg-[var(--raise)] p-3 text-[15px] leading-relaxed outline-none placeholder:opacity-40 focus-visible:outline-2 focus-visible:outline-[var(--c2)]"
+        style={{ border: "1px solid var(--line)" }}
+      />
+      <p className="text-[11px] opacity-35">{240 - text.length} left</p>
     </div>
   );
 }

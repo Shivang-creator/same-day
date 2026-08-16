@@ -1,5 +1,5 @@
 import { describe as group, expect, test } from "vitest";
-import { askFor, moveLabel } from "./prompts";
+import { askFor, liftAsk, moveLabel, pickExample } from "./prompts";
 
 const heavy = [0.15, 0.2, 0.15, 0.2, 0.2];
 const bright = [0.85, 0.8, 0.9, 0.85, 0.8];
@@ -32,7 +32,8 @@ group("askFor", () => {
         const a = askFor(mine, theirs);
         expect(a.title.length).toBeGreaterThan(0);
         expect(a.because.length).toBeGreaterThan(0);
-        expect(a.example.length).toBeGreaterThan(0);
+        expect(a.examples.length).toBeGreaterThan(0);
+        for (const e of a.examples) expect(e.length).toBeGreaterThan(0);
       }
     }
   });
@@ -42,5 +43,23 @@ group("moveLabel", () => {
   test("describes both moves in the receiver's words", () => {
     expect(moveLabel("comfort")).toContain("hear");
     expect(moveLabel("share")).toContain("good");
+  });
+});
+
+group("pickExample", () => {
+  test("is stable for the same day, so the example doesn't flicker", () => {
+    const a = askFor(heavy, heavy);
+    expect(pickExample(a, 42)).toBe(pickExample(a, 42));
+  });
+
+  test("stays in range for any seed, including junk", () => {
+    const a = askFor(heavy, heavy);
+    for (const n of [0, -7, 999999, 3.7]) {
+      expect(a.examples).toContain(pickExample(a, n));
+    }
+  });
+
+  test("the sing prompt offers more than one way out", () => {
+    expect(liftAsk().examples.length).toBeGreaterThan(1);
   });
 });

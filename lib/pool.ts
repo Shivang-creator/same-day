@@ -9,6 +9,8 @@ export interface Clip extends Seed {
   local?: boolean;
   /** Base64 data URL, for locally recorded audio. */
   data?: string;
+  /** A typed reply, when the mic wasn't an option. */
+  text?: string;
   at?: number;
 }
 

@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CurveCanvas } from "@/components/CurveCanvas";
 import { Recorder } from "@/components/Recorder";
 import { Waveform } from "@/components/Waveform";
-import { FLAT, delta, describe, level, type Curve } from "@/lib/curve";
-import { askFor, liftAsk, moveLabel } from "@/lib/prompts";
+import { FLAT, deltaNow, describe, extend, level, type Curve } from "@/lib/curve";
+import { askFor, liftAsk, moveLabel, pickExample } from "@/lib/prompts";
 import {
   addClip,
   block,
@@ -28,7 +28,7 @@ type Stage = "intro" | "draw" | "match" | "give" | "receive" | "after" | "result
 export default function Page() {
   const [stage, setStage] = useState<Stage>("intro");
   const [before, setBefore] = useState<Curve>(FLAT);
-  const [after, setAfter] = useState<Curve>(FLAT);
+  const [now, setNow] = useState<number | null>(null);
   const [match, setMatch] = useState<Clip | null>(null);
   const [smiles, setSmiles] = useState(0);
   const [touched, setTouched] = useState(false);
@@ -54,14 +54,15 @@ export default function Page() {
   }, [before]);
 
   const sent = useCallback(
-    (reply: { data?: string; emoji: string }) => {
+    (reply: { data?: string; emoji: string; text?: string }) => {
       if (match) {
         addClip({
           id: `me-${Date.now()}`,
           curve: before,
           move: ask?.move ?? "comfort",
           emoji: reply.emoji,
-          caption: "",
+          caption: reply.text ?? "",
+          text: reply.text,
           data: reply.data,
         });
         recordSent(match.id);
@@ -71,7 +72,8 @@ export default function Page() {
     [ask, before, match],
   );
 
-  if (stage === "intro") return <Landing onStart={() => setStage("draw")} past={past} />;
+  if (stage === "intro")
+    return <Landing onStart={() => setStage("draw")} past={past} board={board} />;
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col items-center justify-center gap-7 px-6 py-12 lg:max-w-2xl">
@@ -144,7 +146,7 @@ export default function Page() {
               stuck? here&apos;s one
             </summary>
             <p className="card mt-3 rounded-2xl p-4 text-[15px] leading-relaxed opacity-80">
-              {ask?.example}
+              {ask ? pickExample(ask, level(before) * 100) : ""}
             </p>
           </details>
 
@@ -193,7 +195,7 @@ export default function Page() {
 
           <button
             onClick={() => {
-              setAfter(before);
+              setNow(before[before.length - 1]);
               setStage("after");
             }}
             className="warm-btn rounded-full px-9 py-4 text-[15px] font-semibold transition-transform"
@@ -217,19 +219,26 @@ export default function Page() {
         </div>
       )}
 
-      {stage === "after" && (
+      {stage === "after" && now !== null && (
         <div className="rise flex w-full flex-col items-center gap-6">
-          <div className="text-center">
-            <h2 className="display text-3xl lg:text-4xl">so how&apos;s today now?</h2>
-            <p className="mt-2 text-[15px] opacity-55">same five points. move them or don&apos;t.</p>
+          <div className="max-w-[26rem] text-center">
+            <h2 className="display text-3xl lg:text-4xl">where are you right now?</h2>
+            <p className="mt-2 text-[15px] leading-relaxed opacity-55">
+              your day stays exactly as you drew it. nothing that just happened changes what
+              your afternoon was. drag the last point only.
+            </p>
           </div>
           <div className="w-full max-w-lg">
-            <CurveCanvas curve={after} onChange={setAfter} ghost={before} />
+            <CurveCanvas
+              curve={extend(before, now)}
+              onChange={(c) => setNow(c[c.length - 1])}
+              onlyLast
+              label="Your day, plus where you are right now"
+            />
           </div>
-          <p className="text-xs opacity-40">dotted is where you were before</p>
           <button
             onClick={() => {
-              saveDay({ at: Date.now(), before, after });
+              saveDay({ at: Date.now(), before, after: extend(before, now) });
               setStage("result");
             }}
             className="warm-btn rounded-full px-9 py-4 text-[15px] font-semibold transition-transform"
@@ -239,14 +248,23 @@ export default function Page() {
         </div>
       )}
 
-      {stage === "result" && (
-        <Result before={before} after={after} smiles={smiles} past={past} board={board} />
+      {stage === "result" && now !== null && (
+        <Result before={before} now={now} smiles={smiles} past={past} board={board} />
       )}
     </main>
   );
 }
 
-function Landing({ onStart, past }: { onStart: () => void; past: Day[] }) {
+function Landing({
+  onStart,
+  past,
+  board,
+}: {
+  onStart: () => void;
+  past: Day[];
+  board: Ranked[];
+}) {
+  const [open, setOpen] = useState(false);
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col justify-center px-6 py-12">
       <div className="rise grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
@@ -280,18 +298,65 @@ function Landing({ onStart, past }: { onStart: () => void; past: Day[] }) {
             {past.length > 0 ? "draw today" : "draw my day"}
           </button>
 
-          {past.length > 0 && (
-            <div className="flex flex-col items-center gap-2 lg:items-start">
-              <HistoryStrip past={past} />
-              <button
-                onClick={() => {
-                  forgetEverything();
-                  window.location.reload();
-                }}
-                className="text-[11px] underline decoration-dotted underline-offset-4 opacity-30 hover:opacity-80"
-              >
-                forget everything
-              </button>
+          <button
+            onClick={() => setOpen((o) => !o)}
+            className="text-[13px] underline decoration-dotted underline-offset-4 opacity-45 hover:opacity-90"
+          >
+            {open ? "hide" : "your days and the board"}
+          </button>
+
+          {open && (
+            <div className="rise flex w-full max-w-[26rem] flex-col gap-4 text-left">
+              <div className="card rounded-3xl p-5">
+                <p className="mb-3 text-[11px] tracking-[0.25em] uppercase opacity-40">your days</p>
+                {past.length > 0 ? (
+                  <HistoryStrip past={past} />
+                ) : (
+                  <p className="text-[13px] opacity-50">
+                    nothing yet. it fills in one bar at a time, kept on this device only.
+                  </p>
+                )}
+              </div>
+
+              <div className="card rounded-3xl p-5">
+                <p className="mb-3 text-[11px] tracking-[0.25em] uppercase opacity-40">
+                  most smiled at
+                </p>
+                {board.length > 0 ? (
+                  <ol className="flex flex-col gap-3">
+                    {board.map((r, i) => (
+                      <li key={r.clip.id} className="flex items-start gap-3">
+                        <span className="text-xs tabular-nums opacity-35">{i + 1}</span>
+                        <span className="text-lg leading-none">{r.clip.emoji}</span>
+                        <span className="flex-1 text-[13px] leading-snug opacity-75">
+                          {r.clip.caption}
+                        </span>
+                        <span className="text-xs whitespace-nowrap opacity-55">{r.smiles} 🙂</span>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="text-[13px] opacity-50">
+                    nobody has been smiled at yet. tap the face after a clip lands and it shows up
+                    here.
+                  </p>
+                )}
+                <p className="mt-3 text-[11px] opacity-30">
+                  counted on this device. a shared board needs the server-side pool
+                </p>
+              </div>
+
+              {past.length > 0 && (
+                <button
+                  onClick={() => {
+                    forgetEverything();
+                    window.location.reload();
+                  }}
+                  className="self-start text-[11px] underline decoration-dotted underline-offset-4 opacity-30 hover:opacity-80"
+                >
+                  forget everything
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -342,16 +407,24 @@ function Landing({ onStart, past }: { onStart: () => void; past: Day[] }) {
             style={{ perspective: "800px" }}
           >
             {[
-              ["✏️", "draw your day", "five points. no words, no mood list"],
-              ["🫱", "meet one person", "someone whose day looked like yours"],
-              ["🎙️", "say something real", "or sing it. badly is fine"],
-            ].map(([icon, title, sub], i) => (
+              ["draw your day", "five points. no words, no mood list"],
+              ["meet one person", "someone whose day looked like yours"],
+              ["say something real", "or sing it. badly is fine"],
+            ].map(([title, sub], i) => (
               <li
                 key={title}
                 className="card pop flex items-center gap-4 rounded-3xl px-5 py-4 text-left"
                 style={{ animationDelay: `${1.1 + i * 0.18}s` }}
               >
-                <span className="text-2xl">{icon}</span>
+                <span
+                  className="display grid h-9 w-9 shrink-0 place-items-center rounded-full text-lg"
+                  style={{
+                    background: `linear-gradient(135deg, var(--c${i + 1}), var(--c${Math.min(3, i + 2)}))`,
+                    color: "#fff",
+                  }}
+                >
+                  {i + 1}
+                </span>
                 <span className="leading-tight">
                   <strong className="text-[17px] font-medium">{title}</strong>
                   <br />
@@ -378,18 +451,18 @@ function Landing({ onStart, past }: { onStart: () => void; past: Day[] }) {
 
 function Result({
   before,
-  after,
+  now,
   smiles,
   past,
   board,
 }: {
   before: Curve;
-  after: Curve;
+  now: number;
   smiles: number;
   past: Day[];
   board: Ranked[];
 }) {
-  const pts = Math.round(delta(before, after) * 100);
+  const pts = Math.round(deltaNow(before, now) * 100);
 
   // allowed to be flat or negative. an app that can only report improvement
   // isn't measuring anything, it's agreeing with itself.
@@ -402,24 +475,26 @@ function Result({
 
   return (
     <div className="rise flex w-full flex-col items-center gap-6 text-center">
-      <p className="text-[11px] tracking-[0.25em] uppercase opacity-40">before, after</p>
+      <p className="text-[11px] tracking-[0.25em] uppercase opacity-40">your day, plus now</p>
       <h2 className="display max-w-[20ch] text-3xl lg:text-4xl">{headline}</h2>
 
       <div className="card w-full max-w-lg rounded-3xl p-5">
-        <CurveCanvas curve={after} ghost={before} readOnly label="Your day, before and after" />
+        <CurveCanvas curve={extend(before, now)} readOnly label="Your day, plus right now" />
         <div className="mt-3 flex items-center justify-center gap-7 text-sm">
-          <span className="opacity-45">before {Math.round(level(before) * 100)}</span>
+          <span className="opacity-45">
+            ended {Math.round(before[before.length - 1] * 100)}
+          </span>
           <span className="text-xl font-semibold" style={{ color: "var(--c2)" }}>
             {pts >= 0 ? "+" : ""}
             {pts}
           </span>
-          <span className="opacity-45">after {Math.round(level(after) * 100)}</span>
+          <span className="opacity-45">now {Math.round(now * 100)}</span>
         </div>
       </div>
 
       <p className="max-w-[26rem] text-[15px] leading-relaxed opacity-65">
-        most apps ask whether you feel better. this one just measured it, on your own drawing.
-        and it shows the number even when the number sucks.
+        most apps ask whether you feel better. this one measured it, against the point you
+        drew before you heard anything. and it shows the number even when the number sucks.
       </p>
 
       {smiles > 0 && (

@@ -7,6 +7,7 @@
 export const POINTS = 5;
 
 export const SLOT_LABELS = ["morning", "midday", "afternoon", "evening", "night"] as const;
+export const NOW_LABEL = "right now";
 
 export type Curve = number[];
 
@@ -55,11 +56,27 @@ export function lowestSlot(curve: Curve): number {
 }
 
 /**
- * The delta between the curve drawn before the exchange and the one drawn
- * after. This is the number the whole app exists to produce — and it is
- * allowed to be negative. A tool that can only report improvement isn't
- * measuring anything.
+ * The day already happened. Hearing from someone doesn't retroactively change
+ * what your afternoon was like, so asking you to redraw the whole thing would
+ * be measuring the wrong thing (and inviting you to lie about your own
+ * morning).
+ *
+ * What can change is where you are *right now*. So the curve gains one more
+ * point on the end instead of being redrawn, and the number is the distance
+ * between the last point of your day and that one.
+ *
+ * It is allowed to be negative. Something that can only report improvement
+ * isn't measuring anything, it's agreeing with itself.
  */
+export function extend(day: Curve, now: number): Curve {
+  return [...day, Math.max(0, Math.min(1, now))];
+}
+
+export function deltaNow(day: Curve, now: number): number {
+  return now - day[day.length - 1];
+}
+
+/** Kept for the older two-curve comparison in tests. */
 export function delta(before: Curve, after: Curve): number {
   return level(after) - level(before);
 }
