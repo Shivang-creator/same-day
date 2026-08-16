@@ -115,7 +115,7 @@ export function Recorder({
     return (
       <div className="flex flex-col items-center gap-4">
         <p className="max-w-xs text-center text-sm opacity-60">
-          No microphone — that&apos;s fine. Pick one instead.
+          no mic? all good. pick one instead.
         </p>
         <EmojiPad selected={emoji} onSelect={setEmoji} />
         <button
@@ -169,13 +169,13 @@ export function Recorder({
       <p className="text-xs opacity-50">
         {state === "recording"
           ? over
-            ? "keep going if you need to — tap to stop"
+            ? "keep going. tap to stop"
             : "tap to stop"
-          : "thirty seconds — take them all"}
+          : "you've got thirty seconds"}
       </p>
 
       <details className="text-xs opacity-50">
-        <summary className="cursor-pointer hover:opacity-100">can&apos;t talk right now?</summary>
+        <summary className="cursor-pointer hover:opacity-100">can't talk right now?</summary>
         <div className="mt-3 flex flex-col items-center gap-3">
           <EmojiPad selected={emoji} onSelect={setEmoji} />
           <button

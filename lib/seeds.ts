@@ -38,7 +38,7 @@ export const SEEDS: Seed[] = [
     audio: "/voices/01.webm",
     emoji: "🫂",
     caption:
-      "This will pass. It's a learning. Start harder tomorrow — and don't let some marks break your smile.",
+      "this will pass. it's a learning. start harder tomorrow, and don't let some marks break your smile.",
   },
   {
     id: "s02",
@@ -47,7 +47,7 @@ export const SEEDS: Seed[] = [
     audio: "/voices/02.webm",
     emoji: "🎉",
     caption:
-      "Two years without a job, and today I finally got one. I really hope life gives you this too.",
+      "two years without a job and today i finally got one. i hope life gives you this too.",
   },
   {
     id: "s03",
@@ -55,7 +55,7 @@ export const SEEDS: Seed[] = [
     move: "comfort",
     audio: "/voices/03.webm",
     emoji: "🌱",
-    caption: "You got through today. That counted, even if nobody saw it.",
+    caption: "you got through today. that counted, even if nobody saw it.",
   },
   {
     id: "s04",
@@ -63,7 +63,7 @@ export const SEEDS: Seed[] = [
     move: "share",
     audio: "/voices/04.webm",
     emoji: "☀️",
-    caption: "My mum called just to talk. No reason. I forgot how much that fixes.",
+    caption: "my mum called just to talk. no reason. i forgot how much that fixes.",
   },
   {
     id: "s05",
@@ -71,7 +71,7 @@ export const SEEDS: Seed[] = [
     move: "comfort",
     audio: "/voices/05.webm",
     emoji: "🕯️",
-    caption: "The thing you're panicking about tonight — in a year you won't be able to name it.",
+    caption: "the thing you're panicking about tonight, in a year you won't be able to name it.",
   },
   {
     id: "s06",
@@ -79,7 +79,7 @@ export const SEEDS: Seed[] = [
     move: "lift",
     audio: "/voices/06.webm",
     emoji: "🎶",
-    caption: "Thirty seconds of me badly singing the one song that always works.",
+    caption: "thirty seconds of me badly singing the one song that always works.",
   },
   {
     id: "s07",
@@ -87,7 +87,7 @@ export const SEEDS: Seed[] = [
     move: "comfort",
     audio: "/voices/07.webm",
     emoji: "🌧️",
-    caption: "It's okay that today was mostly just getting through it. That's still doing it.",
+    caption: "it's okay that today was mostly just getting through it. that still counts.",
   },
   {
     id: "s08",
@@ -95,7 +95,7 @@ export const SEEDS: Seed[] = [
     move: "share",
     audio: "/voices/08.webm",
     emoji: "🥹",
-    caption: "A stranger held a door and said my name was nice. I've thought about it all day.",
+    caption: "a stranger held a door and said my name was nice. i've thought about it all day.",
   },
   {
     id: "s09",
@@ -103,7 +103,7 @@ export const SEEDS: Seed[] = [
     move: "comfort",
     audio: "/voices/09.webm",
     emoji: "🌤️",
-    caption: "It started badly and it still turned. Days can do that. Yours can too.",
+    caption: "it started badly and still turned around. days do that. yours can too.",
   },
   {
     id: "s10",
@@ -111,6 +111,6 @@ export const SEEDS: Seed[] = [
     move: "lift",
     audio: "/voices/10.webm",
     emoji: "🎬",
-    caption: "Put this song on and go stand outside for five minutes. Trust me on it.",
+    caption: "put this song on and go stand outside for five minutes. trust me.",
   },
 ];

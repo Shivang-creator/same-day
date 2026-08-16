@@ -41,14 +41,14 @@ export function askFor(mine: Curve, theirs: Curve): Ask {
       move: "comfort",
       title:
         me < HEAVY
-          ? "Their day was as heavy as yours. Say the thing you'd want said to you right now."
-          : "Their day was heavy and yours wasn't. Say the thing you'd want to hear on a day like theirs.",
+          ? "their day was as rough as yours. say what you'd want to hear right now."
+          : "their day was rough and yours wasn't. say what you'd want to hear on a day like that.",
       because:
         me < HEAVY
-          ? "You already know exactly what this feels like. That's why it'll land."
-          : "You've got a bit of room today. Spend some of it.",
+          ? "you already know what this feels like. that's why it lands."
+          : "you've got room today. spend a bit of it.",
       example:
-        "“This will pass. It's a learning. Start harder tomorrow — and don't let some marks break your smile.”",
+        "“this will pass. it's a learning. start harder tomorrow, and don't let some marks break your smile.”",
     };
   }
 
@@ -56,28 +56,28 @@ export function askFor(mine: Curve, theirs: Curve): Ask {
   if (me > BRIGHT) {
     return {
       move: "share",
-      title: "Something went right today. Say what — and let someone else feel it.",
-      because: "Good news shared is the cheapest way to make a stranger's day.",
+      title: "something went right today. tell them what.",
+      because: "someone out there needs to hear that good things still happen.",
       example:
-        "“I'm so happy today. Two years without a job, and today I finally got one. I really hope life gives you this too.”",
+        "“i'm so happy today. two years without a job and today i finally got one. i really hope life gives you this too.”",
     };
   }
 
   // Theirs was fine, yours wasn't. Say what you needed — someone will need it.
   return {
     move: "comfort",
-    title: "Say something you'd want to hear. Someone out there needs exactly that.",
-    because: "It doesn't have to be advice. It just has to be kind.",
+    title: "say something you'd want to hear. someone out there needs exactly that.",
+    because: "it doesn't have to be advice. just kind.",
     example:
-      "“You got through today. That counted, even if nobody saw it.”",
+      "“you got through today. that counted, even if nobody saw it.”",
   };
 }
 
 /** The prompt a seed clip was recorded against, for showing on the receiving end. */
 export function moveLabel(move: Move): string {
-  if (move === "comfort") return "they were asked to say the thing they'd want to hear";
+  if (move === "comfort") return "they were asked to say what they'd want to hear";
   if (move === "share") return "they were asked to share something good";
-  return "they were asked to sing it, or hand over what fixes a bad day";
+  return "they were asked to sing it, or name what fixes a bad day";
 }
 
 /**
@@ -91,9 +91,9 @@ export function moveLabel(move: Move): string {
 export function liftAsk(): Ask {
   return {
     move: "lift",
-    title: "Sing it. Hum it. Or just name the song that fixes a bad day.",
-    because: "No words needed. Badly sung counts — arguably counts more.",
+    title: "sing it. hum it. or just name the song that fixes a bad day.",
+    because: "no words needed. badly sung counts more, honestly.",
     example:
-      "“Okay this is going to be rough but —” (thirty seconds of you butchering the chorus), or “put on Ilahi and go stand outside, trust me.”",
+      "“okay this is going to be rough but...” then thirty seconds of you butchering the chorus. or just: “put on Ilahi and go stand outside. trust me.”",
   };
 }

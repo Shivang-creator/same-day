@@ -77,8 +77,8 @@ export default function SeedPage() {
         <p className="text-xs opacity-50">clip {num} — say it like you mean it</p>
         <h1 className="mt-2 text-lg leading-snug font-medium text-balance">{seed.move === "share" ? "Share something good that happened — why you\u2019re happy." : "Say the thing you\u2019d want someone to say to you."}</h1>
         <p className="mt-3 text-xs opacity-45">
-          the sense of it: <em>&ldquo;{seed.caption}&rdquo;</em> — say your own version, in your
-          own words, up to thirty seconds
+          the sense of it: <em>&ldquo;{seed.caption}&rdquo;</em>. say your own version, your own
+          words, up to thirty seconds
         </p>
       </div>
 
@@ -138,9 +138,9 @@ export default function SeedPage() {
       </div>
 
       <p className="max-w-xs text-xs leading-relaxed opacity-45">
-        Each one downloads as <code>NN.webm</code>. Drop all ten into{" "}
-        <code>public/voices/</code>. Prompts vary on purpose — different moods, different
-        energy, so the pool doesn&apos;t sound like one person on a loop.
+        each one downloads as <code>NN.webm</code>. drop all ten into{" "}
+        <code>public/voices/</code>. the asks vary on purpose, so the pool doesn&apos;t sound
+        like one person on a loop.
       </p>
     </main>
   );

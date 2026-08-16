@@ -1,32 +1,26 @@
 @import "tailwindcss";
 
 /*
- * Warm, not clinical.
+ * Night, with a curve running through it.
  *
- * Every wellness app defaults to the same cool blue-grey, which reads as a
- * hospital form. This is closer to a room with a lamp on: warm off-white paper,
- * warm near-black ink, and one soft coral that only ever appears on the thing
- * you are meant to touch.
+ * Deep near-black ground, and one gradient that runs blue into violet into
+ * crimson. The gradient does all the emotional work, so nothing else has to
+ * shout. Same palette VibeCurve used, because it reads as calm rather than
+ * clinical.
  */
 :root {
-  --ground: #faf6f1;
-  --raise: #f1e9e0;
-  --ink: #23201d;
-  --line: #ddd2c6;
-  --warm: #ef8a6a;
-  --soft: #6f665e;
+  --ground: #08070c;
+  --raise: #131320;
+  --ink: #f2f0f7;
+  --line: #262636;
+  --warm: #8b5cf6;
+  --soft: #9a95ad;
+  --c1: #3b5bdb;
+  --c2: #8b5cf6;
+  --c3: #d6336c;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ground: #16140f;
-    --raise: #211e18;
-    --ink: #f5efe6;
-    --line: #35302a;
-    --warm: #ef8a6a;
-    --soft: #a79c90;
-  }
-}
+
 
 html,
 body {
@@ -68,24 +62,16 @@ body {
   to { stroke-dashoffset: 0; }
 }
 
-/* ── Warmth ────────────────────────────────────────────────────────────────
-   Wellness apps default to cool blue-grey, which reads as a hospital form.
-   This is a room with a lamp on: peach, coral and gold, moving slowly enough
-   that you notice it without being able to point at it.                     */
+/* Two slow blooms behind everything, moving just slowly enough that you
+   notice them without being able to point at them. */
 
 :root {
-  --glow-a: #ffd9a8;
-  --glow-b: #ffb3a0;
-  --glow-c: #ffc9e4;
+  --glow-a: #1e2a6b;
+  --glow-b: #4c1d95;
+  --glow-c: #6b1338;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --glow-a: #52351f;
-    --glow-b: #5c2f2a;
-    --glow-c: #4a2740;
-  }
-}
+
 
 body {
   position: relative;
@@ -102,7 +88,7 @@ body::after {
   height: 70vmax;
   border-radius: 50%;
   filter: blur(90px);
-  opacity: 0.55;
+  opacity: 0.5;
   pointer-events: none;
 }
 
@@ -132,15 +118,15 @@ body::after {
   body::after { animation: none; }
 }
 
-/* The one warm gradient, used only on the thing you're meant to press. */
+/* The gradient, used only on the thing you are meant to press. */
 .warm-btn {
-  background: linear-gradient(135deg, var(--warm), #f4a259);
-  color: #1b1512;
-  box-shadow: 0 8px 24px -10px var(--warm);
+  background: linear-gradient(120deg, var(--c1), var(--c2) 55%, var(--c3));
+  color: #fff;
+  box-shadow: 0 10px 40px -12px var(--c2);
 }
 .warm-btn:active { transform: scale(0.96); }
 
-/* Surfaces sit on the blooms rather than blocking them out. */
+/* Surfaces sit on the blooms instead of blocking them out. */
 .card {
   background: color-mix(in srgb, var(--raise) 82%, transparent);
   backdrop-filter: blur(12px);
@@ -161,3 +147,11 @@ body::after {
 .pop { animation: pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 
 @keyframes fadein { to { opacity: 1; } }
+
+body { font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif; }
+
+.display {
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+}

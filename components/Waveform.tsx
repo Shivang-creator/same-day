@@ -84,7 +84,7 @@ export function Waveform({ src, label }: { src: string; label?: string }) {
             style={{
               height: `${Math.round(v * 100)}%`,
               minHeight: 4,
-              background: `linear-gradient(180deg, #f4a259, #e8705a)`,
+              background: `linear-gradient(180deg, var(--c2), var(--c3))`,
               opacity: playing ? 1 : 0.4,
               transition: "height 90ms linear, opacity 250ms",
             }}
@@ -93,7 +93,7 @@ export function Waveform({ src, label }: { src: string; label?: string }) {
       </button>
 
       <p className="mt-1 text-center text-xs opacity-45">
-        {playing ? "playing — a real person, really said this" : "tap the wave to play"}
+        {playing ? "a real person actually said this" : "tap the wave to play"}
       </p>
 
       <audio
