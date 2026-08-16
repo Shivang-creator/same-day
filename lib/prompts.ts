@@ -12,8 +12,9 @@ import { level, type Curve } from "./curve";
  *
  *   comfort  — say the thing you'd want said to you
  *   share    — something good happened; say why, and let it travel
+ *   lift     — sing it, hum it, or hand over the song/film that fixes a bad day
  */
-export type Move = "comfort" | "share";
+export type Move = "comfort" | "share" | "lift";
 
 const HEAVY = 0.4;
 const BRIGHT = 0.6;
@@ -74,7 +75,25 @@ export function askFor(mine: Curve, theirs: Curve): Ask {
 
 /** The prompt a seed clip was recorded against, for showing on the receiving end. */
 export function moveLabel(move: Move): string {
-  return move === "comfort"
-    ? "they were asked to say the thing they'd want to hear"
-    : "they were asked to share something good";
+  if (move === "comfort") return "they were asked to say the thing they'd want to hear";
+  if (move === "share") return "they were asked to share something good";
+  return "they were asked to sing it, or hand over what fixes a bad day";
+}
+
+/**
+ * Every fourth exchange asks for a song instead of a sentence.
+ *
+ * Music is the most reliable mood-repair tool there is, and singing bonds
+ * people faster than talking does — so once in a while the right move isn't
+ * words at all. It also stops the app becoming relentlessly earnest, which is
+ * its own kind of exhausting.
+ */
+export function liftAsk(): Ask {
+  return {
+    move: "lift",
+    title: "Sing it. Hum it. Or just name the song that fixes a bad day.",
+    because: "No words needed. Badly sung counts — arguably counts more.",
+    example:
+      "“Okay this is going to be rough but —” (thirty seconds of you butchering the chorus), or “put on Ilahi and go stand outside, trust me.”",
+  };
 }

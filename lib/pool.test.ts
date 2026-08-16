@@ -7,10 +7,13 @@ import {
   findMatch,
   forgetEverything,
   history,
+  leaderboard,
   loadPool,
   recordSent,
   saveDay,
+  smile,
   smileCount,
+  smiles,
 } from "./pool";
 import { SEEDS } from "./seeds";
 import { FLAT, distance } from "./curve";
@@ -131,5 +134,43 @@ group("history", () => {
     expect(smileCount()).toBe(0);
     expect(blocked()).toHaveLength(0);
     expect(loadPool()).toHaveLength(SEEDS.length);
+  });
+});
+
+group("smiles", () => {
+  test("start empty and count up per clip", () => {
+    expect(smiles()).toEqual({});
+    smile("a");
+    smile("a");
+    smile("b");
+    expect(smiles()).toEqual({ a: 2, b: 1 });
+  });
+
+  test("the board ranks by smiles, most first", () => {
+    smile(SEEDS[2].id);
+    smile(SEEDS[0].id);
+    smile(SEEDS[0].id);
+    smile(SEEDS[0].id);
+    const board = leaderboard();
+    expect(board[0].clip.id).toBe(SEEDS[0].id);
+    expect(board[0].smiles).toBe(3);
+    expect(board[1].clip.id).toBe(SEEDS[2].id);
+  });
+
+  test("clips nobody smiled at never appear", () => {
+    smile(SEEDS[1].id);
+    expect(leaderboard().every((r) => r.smiles > 0)).toBe(true);
+    expect(leaderboard()).toHaveLength(1);
+  });
+
+  test("the board honours its limit", () => {
+    for (const s of SEEDS) smile(s.id);
+    expect(leaderboard(3)).toHaveLength(3);
+  });
+
+  test("forgetEverything clears the smiles too", () => {
+    smile("a");
+    forgetEverything();
+    expect(smiles()).toEqual({});
   });
 });

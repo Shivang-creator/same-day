@@ -165,11 +165,62 @@ export function saveDay(day: Day): void {
 
 export function forgetEverything(): void {
   if (typeof window === "undefined") return;
-  for (const k of [STORE_KEY, MINE_KEY, BLOCK_KEY, HIST_KEY]) {
+  for (const k of [STORE_KEY, MINE_KEY, BLOCK_KEY, HIST_KEY, SMILE_KEY]) {
     try {
       window.localStorage.removeItem(k);
     } catch {
       /* ignore */
     }
   }
+}
+
+const SMILE_KEY = "sameday.smiles.v1";
+
+/**
+ * Smiles.
+ *
+ * A clip earns a smile when someone who heard it says it worked. That is the
+ * only currency here — not likes on a profile, not a follower count, and not
+ * anything you can farm, because you cannot smile at your own clip and you
+ * only ever see one clip per exchange.
+ *
+ * Honest limitation, stated here and in the README: this tally is per-device.
+ * A global board needs the shared server-side pool that `loadPool()` is
+ * waiting on. What is real today is that the vote is genuine and the ordering
+ * below is computed, not decorative.
+ */
+export function smiles(): Record<string, number> {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.localStorage.getItem(SMILE_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+
+export function smile(id: string): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    const s = smiles();
+    s[id] = (s[id] ?? 0) + 1;
+    window.localStorage.setItem(SMILE_KEY, JSON.stringify(s));
+    return s[id];
+  } catch {
+    return 0;
+  }
+}
+
+export interface Ranked {
+  clip: Clip;
+  smiles: number;
+}
+
+/** The clips that made the most people smile, most first. */
+export function leaderboard(limit = 5): Ranked[] {
+  const s = smiles();
+  return loadPool()
+    .map((clip) => ({ clip, smiles: s[clip.id] ?? 0 }))
+    .filter((r) => r.smiles > 0)
+    .sort((a, b) => b.smiles - a.smiles)
+    .slice(0, limit);
 }

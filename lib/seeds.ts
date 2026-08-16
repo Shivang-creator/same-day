@@ -76,10 +76,10 @@ export const SEEDS: Seed[] = [
   {
     id: "s06",
     curve: [0.7, 0.72, 0.85, 0.8, 0.78],
-    move: "share",
+    move: "lift",
     audio: "/voices/06.webm",
-    emoji: "🎧",
-    caption: "I finished something I'd been avoiding for a month. It took forty minutes.",
+    emoji: "🎶",
+    caption: "Thirty seconds of me badly singing the one song that always works.",
   },
   {
     id: "s07",
@@ -108,9 +108,9 @@ export const SEEDS: Seed[] = [
   {
     id: "s10",
     curve: [0.25, 0.35, 0.4, 0.3, 0.2],
-    move: "comfort",
+    move: "lift",
     audio: "/voices/10.webm",
-    emoji: "🍜",
-    caption: "Eat something warm, sleep, and let tomorrow be a different day. That's the whole plan.",
+    emoji: "🎬",
+    caption: "Put this song on and go stand outside for five minutes. Trust me on it.",
   },
 ];

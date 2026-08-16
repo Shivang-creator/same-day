@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CurveCanvas } from "@/components/CurveCanvas";
 import { Recorder } from "@/components/Recorder";
+import { Waveform } from "@/components/Waveform";
 import { FLAT, delta, describe, level, type Curve } from "@/lib/curve";
-import { askFor, moveLabel } from "@/lib/prompts";
+import { askFor, liftAsk, moveLabel } from "@/lib/prompts";
 import {
   addClip,
   block,
@@ -12,11 +13,14 @@ import {
   findMatch,
   forgetEverything,
   history,
+  leaderboard,
+  smile,
   recordSent,
   saveDay,
   smileCount,
   type Clip,
   type Day,
+  type Ranked,
 } from "@/lib/pool";
 
 type Stage = "intro" | "draw" | "match" | "give" | "receive" | "after" | "result";
@@ -29,16 +33,21 @@ export default function Page() {
   const [smiles, setSmiles] = useState(0);
   const [touched, setTouched] = useState(false);
   const [past, setPast] = useState<Day[]>([]);
+  const [board, setBoard] = useState<Ranked[]>([]);
+  const [smiled, setSmiled] = useState(false);
 
   useEffect(() => {
     setSmiles(smileCount());
     setPast(history());
+    setBoard(leaderboard());
   }, [stage]);
 
-  const ask = useMemo(
-    () => (match ? askFor(before, match.curve) : null),
-    [before, match],
-  );
+  const ask = useMemo(() => {
+    if (!match) return null;
+    // Every fourth exchange asks for a song instead of a sentence, so the app
+    // never becomes relentlessly earnest.
+    return smiles > 0 && smiles % 4 === 3 ? liftAsk() : askFor(before, match.curve);
+  }, [before, match, smiles]);
 
   const toMatch = useCallback(() => {
     setMatch(findMatch(before));
@@ -157,21 +166,32 @@ export default function Page() {
           <div className="card w-full rounded-2xl p-6">
             <p className="mb-3 text-xs opacity-50">{moveLabel(match.move)}</p>
             <div className="pop mb-4 text-6xl">{match.emoji}</div>
-            {match.audio && (
-              <audio
-                src={match.audio}
-                controls
-                autoPlay
-                className="w-full"
-                aria-label="Their ten-second reply"
-              />
-            )}
+            {match.audio && <Waveform src={match.audio} label="Their reply" />}
             {match.caption && (
               <p className="mt-3 text-[17px] leading-relaxed italic opacity-85">
                 &ldquo;{match.caption}&rdquo;
               </p>
             )}
           </div>
+
+          <button
+            onClick={() => {
+              smile(match.id);
+              setSmiled(true);
+            }}
+            disabled={smiled}
+            aria-label="This made me smile"
+            className="grid h-16 w-16 place-items-center rounded-full text-3xl transition-transform active:scale-90 disabled:scale-100"
+            style={{
+              background: smiled ? "var(--warm)" : "var(--raise)",
+              border: "1px solid var(--line)",
+            }}
+          >
+            {smiled ? "😊" : "🙂"}
+          </button>
+          <p className="-mt-3 text-xs opacity-50">
+            {smiled ? "they'll know it worked" : "did it work? tap the face"}
+          </p>
 
           <button
             onClick={() => {
@@ -219,7 +239,9 @@ export default function Page() {
         </div>
       )}
 
-      {stage === "result" && <Result before={before} after={after} smiles={smiles} past={past} />}
+      {stage === "result" && (
+        <Result before={before} after={after} smiles={smiles} past={past} board={board} />
+      )}
     </main>
   );
 }
@@ -229,11 +251,13 @@ function Result({
   after,
   smiles,
   past,
+  board,
 }: {
   before: Curve;
   after: Curve;
   smiles: number;
   past: Day[];
+  board: Ranked[];
 }) {
   const d = delta(before, after);
   const pts = Math.round(d * 100);
@@ -279,6 +303,31 @@ function Result({
         </p>
       )}
 
+      {board.length > 0 && (
+        <div className="card w-full rounded-2xl p-4 text-left">
+          <p className="mb-3 text-xs uppercase tracking-[0.2em] opacity-45">
+            Most smiled at
+          </p>
+          <ol className="flex flex-col gap-2.5">
+            {board.map((r, i) => (
+              <li key={r.clip.id} className="flex items-start gap-3">
+                <span className="text-xs opacity-40 tabular-nums">{i + 1}</span>
+                <span className="text-lg leading-none">{r.clip.emoji}</span>
+                <span className="flex-1 text-[13px] leading-snug opacity-75">
+                  {r.clip.caption}
+                </span>
+                <span className="text-xs whitespace-nowrap opacity-60">
+                  {r.smiles} 🙂
+                </span>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-3 text-[11px] opacity-35">
+            counted on this device — a shared board needs the server-side pool
+          </p>
+        </div>
+      )}
+
       <button
         onClick={() => window.location.reload()}
         className="rounded-full border border-[var(--line)] px-6 py-3 text-sm opacity-70 transition-opacity hover:opacity-100"
@@ -298,39 +347,56 @@ function Result({
  */
 function Landing({ onStart, past }: { onStart: () => void; past: Day[] }) {
   return (
-    <div className="rise flex flex-col items-center gap-7 text-center">
-      <p className="text-[11px] uppercase tracking-[0.3em] opacity-40">Same Day</p>
+    <div className="rise flex flex-col items-center gap-9 py-6 text-center">
+      <p className="text-[11px] uppercase tracking-[0.35em] opacity-35">Same Day</p>
 
-      <div className="breathe">
-        <svg viewBox="0 0 300 110" className="w-64" aria-hidden="true">
-          <defs>
-            <linearGradient id="lgrad" x1="0" x2="1">
-              <stop offset="0%" stopColor="#e8705a" />
-              <stop offset="45%" stopColor="#f4a259" />
-              <stop offset="100%" stopColor="#7bc47f" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M 20 78 C 55 78, 55 30, 90 30 S 125 88, 160 88 S 195 36, 230 36 S 268 62, 282 62"
-            fill="none"
-            stroke="url(#lgrad)"
-            strokeWidth="4.5"
-            strokeLinecap="round"
-            pathLength={1}
-            style={{
-              strokeDasharray: 1,
-              strokeDashoffset: 1,
-              animation: "draw 2.6s cubic-bezier(0.4, 0, 0.2, 1) 0.35s forwards",
-            }}
-          />
-        </svg>
+      {/* The curve sits on a tilted plane and draws itself once, slowly. It is
+          the only thing moving on this screen, on purpose — the landing has to
+          calm you down before it asks you for anything. */}
+      <div style={{ perspective: "900px" }}>
+        <div
+          className="breathe"
+          style={{ transform: "rotateX(38deg) rotateZ(-6deg)", transformStyle: "preserve-3d" }}
+        >
+          <svg viewBox="0 0 300 130" className="w-[17rem]" aria-hidden="true">
+            <defs>
+              <linearGradient id="lgrad" x1="0" x2="1">
+                <stop offset="0%" stopColor="#e8705a" />
+                <stop offset="45%" stopColor="#f4a259" />
+                <stop offset="100%" stopColor="#7bc47f" />
+              </linearGradient>
+              <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#f4a259" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="#f4a259" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M 20 78 C 55 78, 55 30, 90 30 S 125 88, 160 88 S 195 36, 230 36 S 268 62, 282 62 L 282 128 L 20 128 Z"
+              fill="url(#fade)"
+              style={{ opacity: 0, animation: "fadein 1.6s ease 2.2s forwards" }}
+            />
+            <path
+              d="M 20 78 C 55 78, 55 30, 90 30 S 125 88, 160 88 S 195 36, 230 36 S 268 62, 282 62"
+              fill="none"
+              stroke="url(#lgrad)"
+              strokeWidth="5"
+              strokeLinecap="round"
+              pathLength={1}
+              style={{
+                strokeDasharray: 1,
+                strokeDashoffset: 1,
+                animation: "draw 3.2s cubic-bezier(0.35, 0, 0.2, 1) 0.5s forwards",
+              }}
+            />
+          </svg>
+        </div>
       </div>
 
-      <h1 className="text-[32px] leading-[1.15] font-medium text-balance">
-        Somebody had the exact{" "}
+      <h1 className="max-w-[16ch] text-[40px] leading-[1.08] font-medium tracking-[-0.02em] text-balance">
+        Somebody had the{" "}
         <span
           style={{
-            background: "linear-gradient(100deg, #e8705a, #f4a259)",
+            background: "linear-gradient(100deg, #e8705a, #f4a259 60%, #7bc47f)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
           }}
@@ -340,31 +406,14 @@ function Landing({ onStart, past }: { onStart: () => void; past: Day[] }) {
         as you.
       </h1>
 
-      {/* What it does, before anyone has to press anything. */}
-      <ol className="flex w-full max-w-[20rem] flex-col gap-2.5 text-left">
-        {[
-          ["✏️", "Draw your day", "five points, ten seconds, no words"],
-          ["🫱", "Meet one person", "whose day had the same shape"],
-          ["🎙️", "Say something real", "they hear it — then you hear theirs"],
-        ].map(([icon, title, sub], i) => (
-          <li
-            key={title}
-            className="card pop flex items-center gap-3 rounded-2xl px-4 py-3"
-            style={{ animationDelay: `${0.5 + i * 0.13}s` }}
-          >
-            <span className="text-xl">{icon}</span>
-            <span className="leading-tight">
-              <strong className="text-[15px] font-medium">{title}</strong>
-              <br />
-              <span className="text-xs opacity-55">{sub}</span>
-            </span>
-          </li>
-        ))}
-      </ol>
+      <p className="max-w-[22rem] text-[18px] leading-[1.6] opacity-60">
+        Draw it. We&apos;ll find them. Then you get thirty seconds to make one stranger
+        smile — and they get thirty to make you.
+      </p>
 
       <button
         onClick={onStart}
-        className="warm-btn rounded-full px-10 py-4 text-[16px] font-semibold transition-transform"
+        className="warm-btn rounded-full px-11 py-5 text-[17px] font-semibold transition-transform"
       >
         {past.length > 0 ? "Draw today" : "Draw my day"}
       </button>
@@ -377,14 +426,42 @@ function Landing({ onStart, past }: { onStart: () => void; past: Day[] }) {
               forgetEverything();
               window.location.reload();
             }}
-            className="text-[11px] underline decoration-dotted underline-offset-4 opacity-35 hover:opacity-80"
+            className="text-[11px] underline decoration-dotted underline-offset-4 opacity-30 hover:opacity-80"
           >
             forget everything
           </button>
         </div>
       )}
 
-      <p className="text-xs opacity-40">no sign-up · no name · nothing leaves this device</p>
+      <ol className="flex w-full max-w-[21rem] flex-col gap-3" style={{ perspective: "800px" }}>
+        {[
+          ["\u270F\uFE0F", "Draw your day", "five points. no words, no mood list"],
+          ["\uD83E\uDEF1", "Meet one person", "whose day had the same shape"],
+          ["\uD83C\uDF99\uFE0F", "Say something real", "or sing it \u2014 badly is fine"],
+        ].map(([icon, title, sub], i) => (
+          <li
+            key={title}
+            className="card pop flex items-center gap-4 rounded-3xl px-5 py-4 text-left"
+            style={{ animationDelay: `${1.1 + i * 0.18}s` }}
+          >
+            <span className="text-2xl">{icon}</span>
+            <span className="leading-tight">
+              <strong className="text-[17px] font-medium">{title}</strong>
+              <br />
+              <span className="text-[13px] opacity-50">{sub}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+
+      <div className="flex max-w-[21rem] flex-col gap-1.5 text-[13px] opacity-45">
+        <p>
+          <strong className="font-medium opacity-90">Every voice here is a real person.</strong>{" "}
+          Nothing on this site is AI-generated — not one clip, not one line of what anyone
+          says to you.
+        </p>
+        <p className="text-xs opacity-70">no sign-up · no name · nothing leaves this device</p>
+      </div>
     </div>
   );
 }
