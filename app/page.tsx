@@ -297,9 +297,8 @@ function Landing({
         <div className="flex flex-col items-center gap-7 text-center lg:items-start lg:text-left">
           <p className="text-[11px] tracking-[0.35em] uppercase opacity-35">same day</p>
 
-          <p className="display max-w-[24rem] text-[19px] leading-[1.45] opacity-55">
-            we&apos;ve never texted more, or talked less. everyone&apos;s pouring their day into
-            a chatbot. this is thirty seconds with an actual person who had the same one.
+          <p className="display max-w-[25rem] text-[20px] leading-[1.4] opacity-60">
+            you told an AI about your day. it&apos;s never had one.
           </p>
 
           <h1 className="display max-w-[14ch] text-[46px] leading-[1.02] sm:text-[58px] lg:text-[64px]">
@@ -317,8 +316,8 @@ function Landing({
           </h1>
 
           <p className="max-w-[26rem] text-[19px] leading-[1.6] opacity-60">
-            draw it, and we&apos;ll find them. you get thirty seconds to make one stranger
-            smile. they get thirty to make you.
+            not an app that listens. a person who gets it, because theirs went the same way.
+            thirty seconds each. nobody finds out who anybody is.
           </p>
 
           <button

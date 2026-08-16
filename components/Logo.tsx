@@ -67,10 +67,14 @@ export function LogoIntro() {
 
   if (phase === "corner") {
     return (
-      <div className="fixed top-6 left-6 z-50 flex items-center gap-2 opacity-70">
+      <a
+        href="/"
+        aria-label="Same Day, back to the start"
+        className="fixed top-6 left-6 z-50 flex items-center gap-2 rounded-full opacity-70 transition-opacity hover:opacity-100"
+      >
         <Mark size={30} />
         <span className="text-[11px] tracking-[0.28em] uppercase opacity-60">same day</span>
-      </div>
+      </a>
     );
   }
 

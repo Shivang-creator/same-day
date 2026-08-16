@@ -56,7 +56,7 @@ export default function SeedPage() {
     tick.current = setInterval(() => {
       const s = (Date.now() - t0) / 1000;
       setSecs(s);
-      if (s >= 10) r.stop();
+      if (s >= 30) r.stop();
     }, 100);
   }
 
@@ -94,7 +94,7 @@ export default function SeedPage() {
           style={{ background: state === "rec" ? "var(--warm)" : "var(--ink)", color: "var(--ground)" }}
         >
           {state === "rec" ? (
-            <span className="text-2xl tabular-nums">{(10 - secs).toFixed(0)}</span>
+            <span className="text-2xl tabular-nums">{Math.max(0, 30 - secs).toFixed(0)}</span>
           ) : (
             "🎙️"
           )}
