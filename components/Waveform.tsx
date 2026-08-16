@@ -109,8 +109,8 @@ export function Waveform({ src, label }: { src: string; label?: string }) {
         }}
         className="mt-2 w-full opacity-60"
       >
-        <source src={`${src}.webm`} type="audio/webm" />
         <source src={`${src}.mp4`} type="audio/mp4" />
+        <source src={`${src}.webm`} type="audio/webm" />
       </audio>
     </div>
   );
