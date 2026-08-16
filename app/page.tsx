@@ -5,7 +5,19 @@ import { CurveCanvas } from "@/components/CurveCanvas";
 import { Recorder } from "@/components/Recorder";
 import { FLAT, delta, describe, level, type Curve } from "@/lib/curve";
 import { PROMPTS } from "@/lib/seeds";
-import { addClip, closeness, findMatch, recordSent, smileCount, type Clip } from "@/lib/pool";
+import {
+  addClip,
+  block,
+  closeness,
+  findMatch,
+  forgetEverything,
+  history,
+  recordSent,
+  saveDay,
+  smileCount,
+  type Clip,
+  type Day,
+} from "@/lib/pool";
 
 type Stage = "intro" | "draw" | "match" | "give" | "receive" | "after" | "result";
 
@@ -16,8 +28,12 @@ export default function Page() {
   const [match, setMatch] = useState<Clip | null>(null);
   const [smiles, setSmiles] = useState(0);
   const [touched, setTouched] = useState(false);
+  const [past, setPast] = useState<Day[]>([]);
 
-  useEffect(() => setSmiles(smileCount()), [stage]);
+  useEffect(() => {
+    setSmiles(smileCount());
+    setPast(history());
+  }, [stage]);
 
   const prompt = useMemo(
     () => PROMPTS[Math.floor(level(before) * PROMPTS.length) % PROMPTS.length],
@@ -48,25 +64,7 @@ export default function Page() {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center gap-7 px-5 py-10">
-      {stage === "intro" && (
-        <div className="rise flex flex-col items-center gap-6 text-center">
-          <p className="text-xs uppercase tracking-[0.2em] opacity-45">Same Day</p>
-          <h1 className="text-[28px] leading-[1.25] font-medium text-balance">
-            Somebody out there had the exact same day as you.
-          </h1>
-          <p className="max-w-[20rem] text-[15px] leading-relaxed opacity-65">
-            Draw yours. We&apos;ll find them. You get ten seconds to make them smile — then
-            you&apos;ll hear what they said to you.
-          </p>
-          <button
-            onClick={() => setStage("draw")}
-            className="rounded-full bg-[var(--ink)] px-8 py-3.5 text-[15px] font-medium text-[var(--ground)] transition-transform active:scale-95"
-          >
-            Draw my day
-          </button>
-          <p className="text-xs opacity-40">no sign-up · no name · nothing kept</p>
-        </div>
-      )}
+      {stage === "intro" && <Landing onStart={() => setStage("draw")} past={past} />}
 
       {stage === "draw" && (
         <div className="rise flex w-full flex-col items-center gap-5">
@@ -167,6 +165,20 @@ export default function Page() {
           >
             Okay — ask me again
           </button>
+
+          {/* One tap out. No live channel and no text field means this is the
+              whole attack surface — so the exit has to be immediate. */}
+          <button
+            onClick={() => {
+              block(match.id);
+              const next = findMatch(before, [match.id]);
+              if (next) setMatch(next);
+              else setStage("after");
+            }}
+            className="text-xs underline decoration-dotted underline-offset-4 opacity-40 hover:opacity-90"
+          >
+            that wasn&apos;t okay — skip it and don&apos;t send it to anyone else
+          </button>
         </div>
       )}
 
@@ -179,7 +191,10 @@ export default function Page() {
           <CurveCanvas curve={after} onChange={setAfter} ghost={before} />
           <p className="text-xs opacity-45">dotted line is where you were before</p>
           <button
-            onClick={() => setStage("result")}
+            onClick={() => {
+              saveDay({ at: Date.now(), before, after });
+              setStage("result");
+            }}
             className="rounded-full bg-[var(--ink)] px-8 py-3.5 text-[15px] font-medium text-[var(--ground)] transition-transform active:scale-95"
           >
             Show me
@@ -187,12 +202,22 @@ export default function Page() {
         </div>
       )}
 
-      {stage === "result" && <Result before={before} after={after} smiles={smiles} />}
+      {stage === "result" && <Result before={before} after={after} smiles={smiles} past={past} />}
     </main>
   );
 }
 
-function Result({ before, after, smiles }: { before: Curve; after: Curve; smiles: number }) {
+function Result({
+  before,
+  after,
+  smiles,
+  past,
+}: {
+  before: Curve;
+  after: Curve;
+  smiles: number;
+  past: Day[];
+}) {
   const d = delta(before, after);
   const pts = Math.round(d * 100);
 
@@ -243,6 +268,102 @@ function Result({ before, after, smiles }: { before: Curve; after: Curve; smiles
       >
         Again tomorrow
       </button>
+    </div>
+  );
+}
+
+/**
+ * The opening screen.
+ *
+ * A curve draws itself once, unprompted, so the first thing you see is the
+ * gesture the app is asking for rather than a paragraph explaining it. One
+ * button. No scrolling, no marketing.
+ */
+function Landing({ onStart, past }: { onStart: () => void; past: Day[] }) {
+  return (
+    <div className="rise flex flex-col items-center gap-6 text-center">
+      <p className="text-xs uppercase tracking-[0.25em] opacity-40">Same Day</p>
+
+      <svg viewBox="0 0 300 96" className="w-56" aria-hidden="true">
+        <path
+          d="M 20 70 C 55 70, 55 26, 90 26 S 125 78, 160 78 S 195 34, 230 34 S 265 58, 280 58"
+          fill="none"
+          stroke="var(--warm)"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+          pathLength={1}
+          style={{
+            strokeDasharray: 1,
+            strokeDashoffset: 1,
+            animation: "draw 2.4s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards",
+          }}
+        />
+      </svg>
+
+      <h1 className="text-[30px] leading-[1.2] font-medium text-balance">
+        Somebody had the exact same day as you.
+      </h1>
+
+      <p className="max-w-[19rem] text-[15px] leading-relaxed opacity-65">
+        Draw yours in ten seconds. We&apos;ll find them. You get one shot at making them
+        smile — then you hear what they said to you.
+      </p>
+
+      <button
+        onClick={onStart}
+        className="rounded-full bg-[var(--ink)] px-9 py-4 text-[15px] font-medium text-[var(--ground)] transition-transform active:scale-95"
+      >
+        {past.length > 0 ? "Draw today" : "Draw my day"}
+      </button>
+
+      {past.length > 0 && (
+        <div className="flex flex-col items-center gap-2">
+          <HistoryStrip past={past} />
+          <button
+            onClick={() => {
+              forgetEverything();
+              window.location.reload();
+            }}
+            className="text-[11px] underline decoration-dotted underline-offset-4 opacity-35 hover:opacity-80"
+          >
+            forget everything
+          </button>
+        </div>
+      )}
+
+      <p className="text-xs opacity-40">
+        no sign-up · no name · nothing leaves this device
+      </p>
+    </div>
+  );
+}
+
+/** Your last fortnight, one bar per day: where you started, where you ended. */
+function HistoryStrip({ past }: { past: Day[] }) {
+  const days = past.slice(-14);
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <div className="flex items-end gap-1" role="img" aria-label={`Your last ${days.length} days`}>
+        {days.map((d, i) => {
+          const b = level(d.before);
+          const a = level(d.after);
+          return (
+            <div key={i} className="flex w-2.5 flex-col items-center justify-end" style={{ height: 34 }}>
+              <div
+                className="w-full rounded-full"
+                style={{
+                  height: `${Math.max(8, a * 100)}%`,
+                  background: a >= b ? "var(--warm)" : "var(--line)",
+                }}
+                title={`${a >= b ? "+" : ""}${Math.round((a - b) * 100)}`}
+              />
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[11px] opacity-40">
+        your last {days.length} {days.length === 1 ? "day" : "days"} · coral means it lifted
+      </p>
     </div>
   );
 }

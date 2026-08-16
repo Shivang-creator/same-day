@@ -71,7 +71,8 @@ export function recordSent(id: string): void {
  * the bleakest possible bug in an app about not being alone.
  */
 export function findMatch(mine: Curve, exclude: string[] = []): Clip | null {
-  const pool = loadPool().filter((c) => !exclude.includes(c.id));
+  const gone = [...exclude, ...blocked()];
+  const pool = loadPool().filter((c) => !gone.includes(c.id));
   if (pool.length === 0) return null;
 
   let best = pool[0];
@@ -93,4 +94,82 @@ export function closeness(mine: Curve, theirs: Curve): string {
   if (d < 0.5) return "a very similar day";
   if (d < 0.8) return "a day with the same shape";
   return "the closest day in the pool right now";
+}
+
+const BLOCK_KEY = "sameday.blocked.v1";
+const HIST_KEY = "sameday.history.v1";
+
+/**
+ * Report and skip.
+ *
+ * There is no live channel and no text field here, so the entire attack surface
+ * is one recording a stranger chose to hear. This is the way out of it: one tap
+ * removes the clip and it is never served to this person again.
+ *
+ * What this build does not have is human review of a shared pool. That needs a
+ * server and a moderator, and the README says so rather than implying a safety
+ * net that isn't there.
+ */
+export function blocked(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(window.localStorage.getItem(BLOCK_KEY) ?? "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function block(id: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const b = blocked();
+    if (!b.includes(id)) b.push(id);
+    window.localStorage.setItem(BLOCK_KEY, JSON.stringify(b));
+  } catch {
+    /* ignore */
+  }
+}
+
+export interface Day {
+  at: number;
+  before: Curve;
+  after: Curve;
+}
+
+/**
+ * Your own days, kept on this device.
+ *
+ * No account means no cross-device history — a real tradeoff, and the honest
+ * framing is the good one: nothing about you ever leaves this device.
+ */
+export function history(): Day[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(window.localStorage.getItem(HIST_KEY) ?? "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function saveDay(day: Day): void {
+  if (typeof window === "undefined") return;
+  try {
+    const h = history();
+    h.push(day);
+    // a fortnight is plenty to see a pattern and small enough to stay honest
+    window.localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(-14)));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function forgetEverything(): void {
+  if (typeof window === "undefined") return;
+  for (const k of [STORE_KEY, MINE_KEY, BLOCK_KEY, HIST_KEY]) {
+    try {
+      window.localStorage.removeItem(k);
+    } catch {
+      /* ignore */
+    }
+  }
 }

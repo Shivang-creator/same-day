@@ -1,7 +1,19 @@
 import { beforeEach, describe as group, expect, test } from "vitest";
-import { addClip, closeness, findMatch, loadPool, recordSent, smileCount } from "./pool";
+import {
+  addClip,
+  block,
+  blocked,
+  closeness,
+  findMatch,
+  forgetEverything,
+  history,
+  loadPool,
+  recordSent,
+  saveDay,
+  smileCount,
+} from "./pool";
 import { SEEDS } from "./seeds";
-import { distance } from "./curve";
+import { FLAT, distance } from "./curve";
 
 beforeEach(() => window.localStorage.clear());
 
@@ -76,5 +88,48 @@ group("closeness", () => {
 
   test("always returns a sentence, however far apart", () => {
     expect(closeness([0, 0, 0, 0, 0], [1, 1, 1, 1, 1]).length).toBeGreaterThan(0);
+  });
+});
+
+group("blocking", () => {
+  test("a blocked clip is never matched again", () => {
+    const mine = SEEDS[0].curve;
+    const first = findMatch(mine)!;
+    block(first.id);
+    expect(findMatch(mine)!.id).not.toBe(first.id);
+  });
+
+  test("blocking is idempotent", () => {
+    block("z");
+    block("z");
+    expect(blocked().filter((x) => x === "z")).toHaveLength(1);
+  });
+});
+
+group("history", () => {
+  test("starts empty and records days in order", () => {
+    expect(history()).toHaveLength(0);
+    saveDay({ at: 1, before: [0.2, 0.2, 0.2, 0.2, 0.2], after: [0.4, 0.4, 0.4, 0.4, 0.4] });
+    saveDay({ at: 2, before: [0.5, 0.5, 0.5, 0.5, 0.5], after: [0.5, 0.5, 0.5, 0.5, 0.5] });
+    expect(history().map((d) => d.at)).toEqual([1, 2]);
+  });
+
+  test("keeps only the last fortnight", () => {
+    for (let i = 0; i < 20; i++) saveDay({ at: i, before: FLAT, after: FLAT });
+    const h = history();
+    expect(h).toHaveLength(14);
+    expect(h[0].at).toBe(6);
+  });
+
+  test("forgetEverything really does", () => {
+    saveDay({ at: 1, before: FLAT, after: FLAT });
+    recordSent("a");
+    block("b");
+    addClip({ id: "c", curve: FLAT, prompt: "p", emoji: "🙂" });
+    forgetEverything();
+    expect(history()).toHaveLength(0);
+    expect(smileCount()).toBe(0);
+    expect(blocked()).toHaveLength(0);
+    expect(loadPool()).toHaveLength(SEEDS.length);
   });
 });

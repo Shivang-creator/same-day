@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const MAX_MS = 10_000;
+// Ten seconds is the ask, not the guillotine. The ring completes at TARGET so
+// the prompt still reads "ten seconds", but recording runs to CEILING — being
+// cut off mid-sentence is worse than saying nothing at all.
+const TARGET_MS = 10_000;
+const CEILING_MS = 25_000;
 
 const EMOJI = ["🫂", "☕", "😂", "🌱", "🎧", "🕯️", "🐕", "🍜", "✨", "🙂", "🔥", "🌤️"];
 
@@ -69,15 +73,16 @@ export function Recorder({
       timer.current = setInterval(() => {
         const ms = Date.now() - startedAt.current;
         setElapsed(ms);
-        if (ms >= MAX_MS) stop();
+        if (ms >= CEILING_MS) stop();
       }, 100);
     } catch {
       setState("denied");
     }
   }, [stop]);
 
-  const seconds = Math.min(MAX_MS, elapsed) / 1000;
-  const pct = Math.min(1, elapsed / MAX_MS);
+  const seconds = elapsed / 1000;
+  const pct = Math.min(1, elapsed / TARGET_MS);
+  const over = elapsed > TARGET_MS;
 
   if (state === "done" && preview) {
     return (
@@ -153,7 +158,7 @@ export function Recorder({
               />
             </svg>
             <span className="text-2xl font-medium tabular-nums">
-              {(MAX_MS / 1000 - seconds).toFixed(0)}
+              {over ? seconds.toFixed(0) : (TARGET_MS / 1000 - seconds).toFixed(0)}
             </span>
           </>
         ) : (
@@ -162,7 +167,11 @@ export function Recorder({
       </button>
 
       <p className="text-xs opacity-50">
-        {state === "recording" ? "tap to stop" : "ten seconds, that's all"}
+        {state === "recording"
+          ? over
+            ? "keep going if you need to — tap to stop"
+            : "tap to stop"
+          : "ten seconds, that's all"}
       </p>
 
       <details className="text-xs opacity-50">
