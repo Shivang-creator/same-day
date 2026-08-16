@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-// Ten seconds is the ask, not the guillotine. The ring completes at TARGET so
-// the prompt still reads "ten seconds", but recording runs to CEILING — being
-// cut off mid-sentence is worse than saying nothing at all.
-const TARGET_MS = 10_000;
-const CEILING_MS = 25_000;
+// Thirty seconds is the room you get, not the limit. The ring completes at
+// TARGET so the ask stays "thirty seconds", but recording runs on to CEILING —
+// being cut off mid-sentence is worse than saying nothing at all.
+const TARGET_MS = 30_000;
+const CEILING_MS = 60_000;
 
 const EMOJI = ["🫂", "☕", "😂", "🌱", "🎧", "🕯️", "🐕", "🍜", "✨", "🙂", "🔥", "🌤️"];
 
@@ -135,7 +135,7 @@ export function Recorder({
       <button
         type="button"
         onClick={state === "recording" ? stop : start}
-        aria-label={state === "recording" ? "Stop recording" : "Record ten seconds"}
+        aria-label={state === "recording" ? "Stop recording" : "Record up to thirty seconds"}
         className="relative grid h-24 w-24 place-items-center rounded-full transition-transform active:scale-95"
         style={{
           background: state === "recording" ? "var(--warm)" : "var(--ink)",
@@ -171,7 +171,7 @@ export function Recorder({
           ? over
             ? "keep going if you need to — tap to stop"
             : "tap to stop"
-          : "ten seconds, that's all"}
+          : "thirty seconds — take them all"}
       </p>
 
       <details className="text-xs opacity-50">

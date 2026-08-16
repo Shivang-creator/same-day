@@ -75,10 +75,10 @@ export default function SeedPage() {
 
       <div className="w-full rounded-2xl bg-[var(--raise)] p-5">
         <p className="text-xs opacity-50">clip {num} — say it like you mean it</p>
-        <h1 className="mt-2 text-lg leading-snug font-medium text-balance">{seed.prompt}</h1>
+        <h1 className="mt-2 text-lg leading-snug font-medium text-balance">{seed.move === "share" ? "Share something good that happened — why you\u2019re happy." : "Say the thing you\u2019d want someone to say to you."}</h1>
         <p className="mt-3 text-xs opacity-45">
-          for someone whose day was {seed.caption ? "like this:" : "similar"}{" "}
-          {seed.caption && <em>&ldquo;{seed.caption}&rdquo;</em>}
+          the sense of it: <em>&ldquo;{seed.caption}&rdquo;</em> — say your own version, in your
+          own words, up to thirty seconds
         </p>
       </div>
 

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CurveCanvas } from "@/components/CurveCanvas";
 import { Recorder } from "@/components/Recorder";
 import { FLAT, delta, describe, level, type Curve } from "@/lib/curve";
-import { PROMPTS } from "@/lib/seeds";
+import { askFor, moveLabel } from "@/lib/prompts";
 import {
   addClip,
   block,
@@ -35,9 +35,9 @@ export default function Page() {
     setPast(history());
   }, [stage]);
 
-  const prompt = useMemo(
-    () => PROMPTS[Math.floor(level(before) * PROMPTS.length) % PROMPTS.length],
-    [before],
+  const ask = useMemo(
+    () => (match ? askFor(before, match.curve) : null),
+    [before, match],
   );
 
   const toMatch = useCallback(() => {
@@ -51,15 +51,16 @@ export default function Page() {
         addClip({
           id: `me-${Date.now()}`,
           curve: before,
-          prompt,
+          move: ask?.move ?? "comfort",
           emoji: reply.emoji,
+          caption: "",
           data: reply.data,
         });
         recordSent(match.id);
       }
       setStage("receive");
     },
-    [before, match, prompt],
+    [ask, before, match],
   );
 
   return (
@@ -85,7 +86,7 @@ export default function Page() {
           <button
             disabled={!touched}
             onClick={toMatch}
-            className="rounded-full bg-[var(--ink)] px-8 py-3.5 text-[15px] font-medium text-[var(--ground)] transition-transform active:scale-95 disabled:opacity-25"
+            className="warm-btn rounded-full px-8 py-3.5 text-[15px] font-semibold transition-transform disabled:opacity-25"
           >
             {touched ? "Find my person" : "Move a point to start"}
           </button>
@@ -98,7 +99,7 @@ export default function Page() {
           <h2 className="text-xl leading-snug font-medium text-balance">
             They had {closeness(before, match.curve)}.
           </h2>
-          <div className="w-full rounded-2xl bg-[var(--raise)] p-4">
+          <div className="card w-full rounded-2xl p-4">
             <CurveCanvas curve={match.curve} ghost={before} readOnly label="Their day" />
             <p className="mt-2 text-xs opacity-55">
               theirs solid · yours dotted — {describe(match.curve)}
@@ -109,7 +110,7 @@ export default function Page() {
           </p>
           <button
             onClick={() => setStage("give")}
-            className="rounded-full bg-[var(--ink)] px-8 py-3.5 text-[15px] font-medium text-[var(--ground)] transition-transform active:scale-95"
+            className="warm-btn rounded-full px-8 py-3.5 text-[15px] font-semibold transition-transform"
           >
             Say something to them
           </button>
@@ -119,10 +120,26 @@ export default function Page() {
       {stage === "give" && (
         <div className="rise flex w-full flex-col items-center gap-6 text-center">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] opacity-45">Your ten seconds</p>
-            <h2 className="mt-2 text-xl leading-snug font-medium text-balance">{prompt}</h2>
+            <p className="text-xs uppercase tracking-[0.2em] opacity-45">
+              {ask?.move === "share" ? "Pass it on" : "Say it out loud"}
+            </p>
+            <h2 className="mt-2 text-[22px] leading-snug font-medium text-balance">
+              {ask?.title}
+            </h2>
+            <p className="mt-2 text-sm opacity-55">{ask?.because}</p>
           </div>
+
           <Recorder onDone={sent} />
+
+          <details className="w-full text-left">
+            <summary className="cursor-pointer text-center text-xs opacity-45 hover:opacity-90">
+              not sure what to say?
+            </summary>
+            <p className="card mt-3 rounded-2xl p-4 text-[15px] leading-relaxed opacity-80">
+              {ask?.example}
+            </p>
+          </details>
+
           <p className="max-w-[19rem] text-xs leading-relaxed opacity-45">
             They&apos;ll never know who you are. You&apos;ll never know who they are. That&apos;s
             the whole deal.
@@ -137,9 +154,9 @@ export default function Page() {
             Someone who had your day said this.
           </h2>
 
-          <div className="w-full rounded-2xl bg-[var(--raise)] p-6">
-            <p className="mb-3 text-xs opacity-50">they were asked: {match.prompt.toLowerCase()}</p>
-            <div className="mb-4 text-5xl">{match.emoji}</div>
+          <div className="card w-full rounded-2xl p-6">
+            <p className="mb-3 text-xs opacity-50">{moveLabel(match.move)}</p>
+            <div className="pop mb-4 text-6xl">{match.emoji}</div>
             {match.audio && (
               <audio
                 src={match.audio}
@@ -150,7 +167,7 @@ export default function Page() {
               />
             )}
             {match.caption && (
-              <p className="mt-3 text-[15px] leading-relaxed italic opacity-80">
+              <p className="mt-3 text-[17px] leading-relaxed italic opacity-85">
                 &ldquo;{match.caption}&rdquo;
               </p>
             )}
@@ -161,7 +178,7 @@ export default function Page() {
               setAfter(before);
               setStage("after");
             }}
-            className="rounded-full bg-[var(--ink)] px-8 py-3.5 text-[15px] font-medium text-[var(--ground)] transition-transform active:scale-95"
+            className="warm-btn rounded-full px-8 py-3.5 text-[15px] font-semibold transition-transform"
           >
             Okay — ask me again
           </button>
@@ -195,7 +212,7 @@ export default function Page() {
               saveDay({ at: Date.now(), before, after });
               setStage("result");
             }}
-            className="rounded-full bg-[var(--ink)] px-8 py-3.5 text-[15px] font-medium text-[var(--ground)] transition-transform active:scale-95"
+            className="warm-btn rounded-full px-8 py-3.5 text-[15px] font-semibold transition-transform"
           >
             Show me
           </button>
@@ -235,7 +252,7 @@ function Result({
       <p className="text-xs uppercase tracking-[0.2em] opacity-45">Before · after</p>
       <h2 className="text-xl leading-snug font-medium text-balance">{headline}</h2>
 
-      <div className="w-full rounded-2xl bg-[var(--raise)] p-4">
+      <div className="card w-full rounded-2xl p-4">
         <CurveCanvas curve={after} ghost={before} readOnly label="Your day, before and after" />
         <div className="mt-3 flex items-center justify-center gap-6 text-sm">
           <span className="opacity-50">before {Math.round(level(before) * 100)}</span>
@@ -281,37 +298,73 @@ function Result({
  */
 function Landing({ onStart, past }: { onStart: () => void; past: Day[] }) {
   return (
-    <div className="rise flex flex-col items-center gap-6 text-center">
-      <p className="text-xs uppercase tracking-[0.25em] opacity-40">Same Day</p>
+    <div className="rise flex flex-col items-center gap-7 text-center">
+      <p className="text-[11px] uppercase tracking-[0.3em] opacity-40">Same Day</p>
 
-      <svg viewBox="0 0 300 96" className="w-56" aria-hidden="true">
-        <path
-          d="M 20 70 C 55 70, 55 26, 90 26 S 125 78, 160 78 S 195 34, 230 34 S 265 58, 280 58"
-          fill="none"
-          stroke="var(--warm)"
-          strokeWidth="3.5"
-          strokeLinecap="round"
-          pathLength={1}
+      <div className="breathe">
+        <svg viewBox="0 0 300 110" className="w-64" aria-hidden="true">
+          <defs>
+            <linearGradient id="lgrad" x1="0" x2="1">
+              <stop offset="0%" stopColor="#e8705a" />
+              <stop offset="45%" stopColor="#f4a259" />
+              <stop offset="100%" stopColor="#7bc47f" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M 20 78 C 55 78, 55 30, 90 30 S 125 88, 160 88 S 195 36, 230 36 S 268 62, 282 62"
+            fill="none"
+            stroke="url(#lgrad)"
+            strokeWidth="4.5"
+            strokeLinecap="round"
+            pathLength={1}
+            style={{
+              strokeDasharray: 1,
+              strokeDashoffset: 1,
+              animation: "draw 2.6s cubic-bezier(0.4, 0, 0.2, 1) 0.35s forwards",
+            }}
+          />
+        </svg>
+      </div>
+
+      <h1 className="text-[32px] leading-[1.15] font-medium text-balance">
+        Somebody had the exact{" "}
+        <span
           style={{
-            strokeDasharray: 1,
-            strokeDashoffset: 1,
-            animation: "draw 2.4s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards",
+            background: "linear-gradient(100deg, #e8705a, #f4a259)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
           }}
-        />
-      </svg>
-
-      <h1 className="text-[30px] leading-[1.2] font-medium text-balance">
-        Somebody had the exact same day as you.
+        >
+          same day
+        </span>{" "}
+        as you.
       </h1>
 
-      <p className="max-w-[19rem] text-[15px] leading-relaxed opacity-65">
-        Draw yours in ten seconds. We&apos;ll find them. You get one shot at making them
-        smile — then you hear what they said to you.
-      </p>
+      {/* What it does, before anyone has to press anything. */}
+      <ol className="flex w-full max-w-[20rem] flex-col gap-2.5 text-left">
+        {[
+          ["✏️", "Draw your day", "five points, ten seconds, no words"],
+          ["🫱", "Meet one person", "whose day had the same shape"],
+          ["🎙️", "Say something real", "they hear it — then you hear theirs"],
+        ].map(([icon, title, sub], i) => (
+          <li
+            key={title}
+            className="card pop flex items-center gap-3 rounded-2xl px-4 py-3"
+            style={{ animationDelay: `${0.5 + i * 0.13}s` }}
+          >
+            <span className="text-xl">{icon}</span>
+            <span className="leading-tight">
+              <strong className="text-[15px] font-medium">{title}</strong>
+              <br />
+              <span className="text-xs opacity-55">{sub}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
 
       <button
         onClick={onStart}
-        className="rounded-full bg-[var(--ink)] px-9 py-4 text-[15px] font-medium text-[var(--ground)] transition-transform active:scale-95"
+        className="warm-btn rounded-full px-10 py-4 text-[16px] font-semibold transition-transform"
       >
         {past.length > 0 ? "Draw today" : "Draw my day"}
       </button>
@@ -331,9 +384,7 @@ function Landing({ onStart, past }: { onStart: () => void; past: Day[] }) {
         </div>
       )}
 
-      <p className="text-xs opacity-40">
-        no sign-up · no name · nothing leaves this device
-      </p>
+      <p className="text-xs opacity-40">no sign-up · no name · nothing leaves this device</p>
     </div>
   );
 }

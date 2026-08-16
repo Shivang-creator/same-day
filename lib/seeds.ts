@@ -1,122 +1,116 @@
 import type { Curve } from "./curve";
+import type { Move } from "./prompts";
 
 /**
  * The starting pool.
  *
  * Every clip here is a real person's real voice, recorded for this. None of it
- * is generated, and none of it is an actor reading a script — the prompt is
- * what they were asked, and what they said is theirs.
+ * is generated and none of it is read off a script — the ask is what they were
+ * given, and what they said is theirs.
  *
  * A cold-start pool is seeded by definition, and the README says so plainly
- * rather than implying a crowd that doesn't exist yet. Clips recorded by
- * anyone using the app join this pool and are served the same way.
+ * rather than implying a crowd that doesn't exist yet. Clips recorded by anyone
+ * using the app join this pool and are served the same way.
  *
- * To add one: drop the audio in `public/voices/` and add a row below. If the
- * file is missing the row still works — it falls back to the emoji reply, so a
+ * To add one: drop the audio in `public/voices/` and add a row. If the file is
+ * missing the row still works — the emoji and caption carry it, so a
  * half-filled pool degrades instead of breaking.
  */
 export interface Seed {
   id: string;
-  /** The shape of the day this person was having when they recorded it. */
+  /** The shape of the day this person was having. */
   curve: Curve;
-  /** What they were asked. */
-  prompt: string;
-  /** Audio in public/voices/. Optional — omit and the emoji carries it. */
+  /** Which of the two moves they were asked for. */
+  move: Move;
+  /** Audio in public/voices/. Optional — the caption carries it if missing. */
   audio?: string;
-  /** Always present. This is what plays when audio can't. */
+  /** Always present. This is what shows when audio can't play. */
   emoji: string;
-  /** Optional caption, for anyone who can't or won't play audio. */
-  caption?: string;
+  /** Always present, so anyone who can't or won't play audio still gets it. */
+  caption: string;
 }
-
-export const PROMPTS = [
-  "Say the thing you wish someone had said to you today.",
-  "Tell them one small thing that went right.",
-  "What's something stupid that made you laugh recently?",
-  "Tell them what you'd do with them if they were here.",
-  "Say something you'd say to yourself a year ago.",
-  "What are you looking forward to, even a little?",
-] as const;
 
 export const SEEDS: Seed[] = [
   {
     id: "s01",
     curve: [0.2, 0.25, 0.15, 0.3, 0.35],
-    prompt: PROMPTS[0],
+    move: "comfort",
     audio: "/voices/01.webm",
     emoji: "🫂",
-    caption: "You're doing better than you think you are.",
+    caption:
+      "This will pass. It's a learning. Start harder tomorrow — and don't let some marks break your smile.",
   },
   {
     id: "s02",
-    curve: [0.7, 0.6, 0.45, 0.5, 0.6],
-    prompt: PROMPTS[1],
+    curve: [0.82, 0.78, 0.75, 0.85, 0.88],
+    move: "share",
     audio: "/voices/02.webm",
-    emoji: "☕",
-    caption: "The chai today was genuinely perfect. That's it. That's the win.",
+    emoji: "🎉",
+    caption:
+      "Two years without a job, and today I finally got one. I really hope life gives you this too.",
   },
   {
     id: "s03",
     curve: [0.3, 0.2, 0.25, 0.4, 0.55],
-    prompt: PROMPTS[2],
+    move: "comfort",
     audio: "/voices/03.webm",
-    emoji: "😂",
-    caption: "My own alarm scared me. In my own room. That I set.",
+    emoji: "🌱",
+    caption: "You got through today. That counted, even if nobody saw it.",
   },
   {
     id: "s04",
-    curve: [0.5, 0.55, 0.6, 0.45, 0.4],
-    prompt: PROMPTS[3],
+    curve: [0.75, 0.8, 0.7, 0.72, 0.8],
+    move: "share",
     audio: "/voices/04.webm",
-    emoji: "🚶",
-    caption: "Nothing. Just walk somewhere and not talk. That's allowed.",
+    emoji: "☀️",
+    caption: "My mum called just to talk. No reason. I forgot how much that fixes.",
   },
   {
     id: "s05",
     curve: [0.15, 0.2, 0.3, 0.35, 0.25],
-    prompt: PROMPTS[4],
+    move: "comfort",
     audio: "/voices/05.webm",
-    emoji: "🌱",
-    caption: "The thing you're panicking about — you won't remember it.",
+    emoji: "🕯️",
+    caption: "The thing you're panicking about tonight — in a year you won't be able to name it.",
   },
   {
     id: "s06",
-    curve: [0.8, 0.75, 0.7, 0.8, 0.85],
-    prompt: PROMPTS[5],
+    curve: [0.7, 0.72, 0.85, 0.8, 0.78],
+    move: "share",
     audio: "/voices/06.webm",
     emoji: "🎧",
-    caption: "New album drops Friday and I have plans to do nothing else.",
+    caption: "I finished something I'd been avoiding for a month. It took forty minutes.",
   },
   {
     id: "s07",
     curve: [0.45, 0.3, 0.2, 0.25, 0.4],
-    prompt: PROMPTS[0],
+    move: "comfort",
     audio: "/voices/07.webm",
-    emoji: "🕯️",
-    caption: "It's okay that today was mostly just getting through it.",
+    emoji: "🌧️",
+    caption: "It's okay that today was mostly just getting through it. That's still doing it.",
   },
   {
     id: "s08",
-    curve: [0.6, 0.65, 0.5, 0.35, 0.3],
-    prompt: PROMPTS[1],
+    curve: [0.8, 0.85, 0.78, 0.82, 0.9],
+    move: "share",
     audio: "/voices/08.webm",
-    emoji: "📞",
-    caption: "Someone called me for no reason. No reason! People still do that.",
+    emoji: "🥹",
+    caption: "A stranger held a door and said my name was nice. I've thought about it all day.",
   },
   {
     id: "s09",
     curve: [0.35, 0.4, 0.55, 0.65, 0.7],
-    prompt: PROMPTS[2],
+    move: "comfort",
     audio: "/voices/09.webm",
-    emoji: "🐕",
-    caption: "A dog outside the shop chose me. Out of everyone. Me.",
+    emoji: "🌤️",
+    caption: "It started badly and it still turned. Days can do that. Yours can too.",
   },
   {
     id: "s10",
     curve: [0.25, 0.35, 0.4, 0.3, 0.2],
-    prompt: PROMPTS[3],
+    move: "comfort",
     audio: "/voices/10.webm",
     emoji: "🍜",
-    caption: "Maggi at 2am, no talking, bad TV. That's the whole plan.",
+    caption: "Eat something warm, sleep, and let tomorrow be a different day. That's the whole plan.",
   },
 ];

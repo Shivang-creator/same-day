@@ -27,7 +27,7 @@ group("the pool", () => {
   });
 
   test("grows when a clip is recorded", () => {
-    addClip({ id: "x1", curve: [0.5, 0.5, 0.5, 0.5, 0.5], prompt: "p", emoji: "🙂" });
+    addClip({ id: "x1", curve: [0.5, 0.5, 0.5, 0.5, 0.5], move: "comfort", emoji: "🙂", caption: "" });
     expect(loadPool()).toHaveLength(SEEDS.length + 1);
   });
 
@@ -49,7 +49,7 @@ group("findMatch", () => {
   // The bleakest possible bug in an app about not being alone.
   test("never hands you your own clip back", () => {
     const mine = [0.99, 0.99, 0.99, 0.99, 0.99];
-    addClip({ id: "mine", curve: mine, prompt: "p", emoji: "🙂" });
+    addClip({ id: "mine", curve: mine, move: "comfort", emoji: "🙂", caption: "" });
     expect(findMatch(mine, ["mine"])!.id).not.toBe("mine");
   });
 
@@ -125,7 +125,7 @@ group("history", () => {
     saveDay({ at: 1, before: FLAT, after: FLAT });
     recordSent("a");
     block("b");
-    addClip({ id: "c", curve: FLAT, prompt: "p", emoji: "🙂" });
+    addClip({ id: "c", curve: FLAT, move: "comfort", emoji: "🙂", caption: "" });
     forgetEverything();
     expect(history()).toHaveLength(0);
     expect(smileCount()).toBe(0);
