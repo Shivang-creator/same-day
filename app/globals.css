@@ -1,26 +1,65 @@
 @import "tailwindcss";
 
+/*
+ * Warm, not clinical.
+ *
+ * Every wellness app defaults to the same cool blue-grey, which reads as a
+ * hospital form. This is closer to a room with a lamp on: warm off-white paper,
+ * warm near-black ink, and one soft coral that only ever appears on the thing
+ * you are meant to touch.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --ground: #faf6f1;
+  --raise: #f1e9e0;
+  --ink: #23201d;
+  --line: #ddd2c6;
+  --warm: #ef8a6a;
+  --soft: #6f665e;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --ground: #16140f;
+    --raise: #211e18;
+    --ink: #f5efe6;
+    --line: #35302a;
+    --warm: #ef8a6a;
+    --soft: #a79c90;
   }
 }
 
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--ground);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
 }
+
+body {
+  overscroll-behavior-y: none;
+}
+
+/* Focus that is visible without being ugly — the default ring disappears
+   against warm grounds, and this path gets used by keyboard and switch users. */
+:where(button, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--warm);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.rise { animation: rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
