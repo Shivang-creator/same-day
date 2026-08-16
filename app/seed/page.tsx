@@ -18,6 +18,7 @@ export default function SeedPage() {
   const [url, setUrl] = useState<string | null>(null);
   const [saved, setSaved] = useState<number[]>([]);
   const [secs, setSecs] = useState(0);
+  const [ext, setExt] = useState<"webm" | "mp4">("webm");
 
   const rec = useRef<MediaRecorder | null>(null);
   const chunks = useRef<BlobPart[]>([]);
@@ -41,7 +42,11 @@ export default function SeedPage() {
     r.onstop = () => {
       if (tick.current) clearInterval(tick.current);
       stream.getTracks().forEach((t) => t.stop());
-      setUrl(URL.createObjectURL(new Blob(chunks.current, { type: "audio/webm" })));
+      // Safari records audio/mp4, Chrome and Firefox record audio/webm.
+      // Hardcoding webm here made Safari unable to decode its own recording.
+      const type = r.mimeType || "audio/webm";
+      setExt(type.includes("mp4") || type.includes("mpeg") ? "mp4" : "webm");
+      setUrl(URL.createObjectURL(new Blob(chunks.current, { type })));
       setState("done");
     };
     r.start();
@@ -59,7 +64,7 @@ export default function SeedPage() {
     if (!url) return;
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${num}.webm`;
+    a.download = `${num}.${ext}`;
     a.click();
     setSaved((s) => [...s, idx]);
     setUrl(null);
@@ -111,7 +116,7 @@ export default function SeedPage() {
               onClick={save}
               className="rounded-full bg-[var(--ink)] px-6 py-2 text-sm font-medium text-[var(--ground)]"
             >
-              Save {num}.webm
+              Save {num}.{ext}
             </button>
           </div>
         </div>
@@ -138,7 +143,7 @@ export default function SeedPage() {
       </div>
 
       <p className="max-w-xs text-xs leading-relaxed opacity-45">
-        each one downloads as <code>NN.webm</code>. drop all ten into{" "}
+        each one downloads as <code>NN.{ext}</code>. drop all ten into{" "}
         <code>public/voices/</code>. the asks vary on purpose, so the pool doesn&apos;t sound
         like one person on a loop.
       </p>

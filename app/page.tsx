@@ -297,6 +297,11 @@ function Landing({
         <div className="flex flex-col items-center gap-7 text-center lg:items-start lg:text-left">
           <p className="text-[11px] tracking-[0.35em] uppercase opacity-35">same day</p>
 
+          <p className="display max-w-[24rem] text-[19px] leading-[1.45] opacity-55">
+            we&apos;ve never texted more, or talked less. everyone&apos;s pouring their day into
+            a chatbot. this is thirty seconds with an actual person who had the same one.
+          </p>
+
           <h1 className="display max-w-[14ch] text-[46px] leading-[1.02] sm:text-[58px] lg:text-[64px]">
             somebody had the{" "}
             <span
@@ -449,15 +454,10 @@ function Landing({
                   }}
                 />
                 <span
-                  className="display shrink-0 text-[30px] leading-none"
-                  style={{
-                    background: `linear-gradient(140deg, var(--c1), var(--c2) ${35 + i * 25}%, var(--c3))`,
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    opacity: 0.9,
-                  }}
+                  className="shrink-0 text-[11px] tracking-[0.18em] uppercase opacity-40"
+                  style={{ width: "3.2rem" }}
                 >
-                  {i + 1}
+                  {["first", "then", "then"][i]}
                 </span>
                 <span className="leading-tight">
                   <strong className="text-[17px] font-medium">{title}</strong>

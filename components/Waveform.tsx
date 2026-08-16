@@ -98,7 +98,6 @@ export function Waveform({ src, label }: { src: string; label?: string }) {
 
       <audio
         ref={audioRef}
-        src={src}
         controls
         preload="metadata"
         aria-label={label ?? "Their reply"}
@@ -109,7 +108,10 @@ export function Waveform({ src, label }: { src: string; label?: string }) {
           setLevels(new Array(BARS).fill(0.06));
         }}
         className="mt-2 w-full opacity-60"
-      />
+      >
+        <source src={`${src}.webm`} type="audio/webm" />
+        <source src={`${src}.mp4`} type="audio/mp4" />
+      </audio>
     </div>
   );
 }

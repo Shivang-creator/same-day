@@ -52,6 +52,7 @@ export function askFor(mine: Curve, theirs: Curve): Ask {
         "honestly i failed the same paper twice. nobody remembers it except me. you'll be the only one who remembers this too.",
         "you don't have to fix it tonight. eat something, sleep, and let tomorrow be a different day.",
         "whatever happened today, you still showed up for it. i know that doesn't feel like much right now but it is.",
+        "nobody's keeping score of your worst days except you. you can put that down.",
       ],
     };
   }
@@ -67,6 +68,7 @@ export function askFor(mine: Curve, theirs: Curve): Ask {
         "my mum rang for absolutely no reason and i've been in a good mood since four o'clock.",
         "someone i barely know remembered something i said months ago. tiny thing. made my week.",
         "i finally sent the message i'd been scared to send for three weeks and it went fine. it usually goes fine.",
+        "i laughed properly today for the first time in a while. i hope something does that to you soon.",
       ],
     };
   }
@@ -80,6 +82,8 @@ export function askFor(mine: Curve, theirs: Curve): Ask {
       "you got through today. that counted, even if nobody saw it.",
       "nothing has to be resolved tonight. tomorrow gets its own go.",
       "if today was mostly just getting through it, that's still doing it.",
+      "you're allowed to have had a boring day. not everything has to mean something.",
+      "whatever you're carrying right now, you can set it down for tonight and pick it up tomorrow if you still want it.",
     ],
   };
 }
@@ -114,6 +118,7 @@ export function liftAsk(): Ask {
       "put on Ilahi and go stand outside for five minutes. trust me on this one.",
       "watch Zindagi Na Milegi Dobara. skip to the deep sea bit. you'll be fine.",
       "just hum something. anything. it works better than it has any right to.",
+      "the song you had on repeat when you were fifteen. put that on. no notes.",
     ],
   };
 }
