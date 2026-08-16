@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { PROMPTS, SEEDS } from "@/lib/seeds";
+import { SEEDS } from "@/lib/seeds";
 
 /**
  * A builder tool, not part of the product.
@@ -23,7 +23,11 @@ export default function SeedPage() {
   const chunks = useRef<BlobPart[]>([]);
   const tick = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => () => tick.current && clearInterval(tick.current), []);
+  useEffect(() => {
+    return () => {
+      if (tick.current) clearInterval(tick.current);
+    };
+  }, []);
 
   const seed = SEEDS[idx];
   const num = String(idx + 1).padStart(2, "0");
@@ -35,7 +39,7 @@ export default function SeedPage() {
     rec.current = r;
     r.ondataavailable = (e) => e.data.size > 0 && chunks.current.push(e.data);
     r.onstop = () => {
-      tick.current && clearInterval(tick.current);
+      if (tick.current) clearInterval(tick.current);
       stream.getTracks().forEach((t) => t.stop());
       setUrl(URL.createObjectURL(new Blob(chunks.current, { type: "audio/webm" })));
       setState("done");
