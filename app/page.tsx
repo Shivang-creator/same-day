@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CurveCanvas } from "@/components/CurveCanvas";
 import { Recorder } from "@/components/Recorder";
 import { Waveform } from "@/components/Waveform";
+import { LogoIntro } from "@/components/Logo";
 import { FLAT, deltaNow, describe, extend, level, type Curve } from "@/lib/curve";
 import { askFor, liftAsk, moveLabel, pickExample } from "@/lib/prompts";
 import {
@@ -35,12 +36,17 @@ export default function Page() {
   const [past, setPast] = useState<Day[]>([]);
   const [board, setBoard] = useState<Ranked[]>([]);
   const [smiled, setSmiled] = useState(false);
+  const [exIdx, setExIdx] = useState(0);
 
+  // localStorage only exists after mount, so this genuinely has to be an
+  // effect. Re-reads on every stage change because the counts move mid-session.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setSmiles(smileCount());
     setPast(history());
     setBoard(leaderboard());
   }, [stage]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const ask = useMemo(() => {
     if (!match) return null;
@@ -73,10 +79,17 @@ export default function Page() {
   );
 
   if (stage === "intro")
-    return <Landing onStart={() => setStage("draw")} past={past} board={board} />;
+    return (
+      <>
+        <LogoIntro />
+        <Landing onStart={() => setStage("draw")} past={past} board={board} />
+      </>
+    );
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col items-center justify-center gap-7 px-6 py-12 lg:max-w-2xl">
+    <>
+      <LogoIntro />
+      <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col items-center justify-center gap-7 px-6 py-12 lg:max-w-2xl">
       {stage === "draw" && (
         <div className="rise flex w-full flex-col items-center gap-6">
           <div className="text-center">
@@ -141,14 +154,25 @@ export default function Page() {
 
           <Recorder onDone={sent} />
 
-          <details className="w-full max-w-md text-left">
-            <summary className="cursor-pointer text-center text-xs opacity-40 hover:opacity-90">
-              stuck? here&apos;s one
-            </summary>
-            <p className="card mt-3 rounded-2xl p-4 text-[15px] leading-relaxed opacity-80">
-              {ask ? pickExample(ask, level(before) * 100) : ""}
-            </p>
-          </details>
+          {ask && (
+            <div className="w-full max-w-md">
+              <p className="card rounded-2xl p-4 text-left text-[15px] leading-relaxed opacity-80">
+                {pickExample(ask, exIdx)}
+              </p>
+              <div className="mt-2 flex items-center justify-between px-1">
+                <span className="text-[11px] opacity-35">
+                  stuck? say something like this, in your words
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setExIdx((i) => i + 1)}
+                  className="rounded-full border border-[var(--line)] px-3 py-1 text-[11px] opacity-60 transition-opacity hover:opacity-100"
+                >
+                  another ↻
+                </button>
+              </div>
+            </div>
+          )}
 
           <p className="max-w-[22rem] text-xs leading-relaxed opacity-40">
             they never find out who you are. you never find out who they are.
@@ -251,7 +275,8 @@ export default function Page() {
       {stage === "result" && now !== null && (
         <Result before={before} now={now} smiles={smiles} past={past} board={board} />
       )}
-    </main>
+      </main>
+    </>
   );
 }
 
@@ -413,14 +438,23 @@ function Landing({
             ].map(([title, sub], i) => (
               <li
                 key={title}
-                className="card pop flex items-center gap-4 rounded-3xl px-5 py-4 text-left"
+                className="card pop relative flex items-center gap-4 overflow-hidden rounded-3xl px-5 py-4 text-left"
                 style={{ animationDelay: `${1.1 + i * 0.18}s` }}
               >
                 <span
-                  className="display grid h-9 w-9 shrink-0 place-items-center rounded-full text-lg"
+                  aria-hidden="true"
+                  className="absolute inset-y-0 left-0 w-[3px]"
                   style={{
-                    background: `linear-gradient(135deg, var(--c${i + 1}), var(--c${Math.min(3, i + 2)}))`,
-                    color: "#fff",
+                    background: `linear-gradient(180deg, var(--c${i + 1}), transparent)`,
+                  }}
+                />
+                <span
+                  className="display shrink-0 text-[30px] leading-none"
+                  style={{
+                    background: `linear-gradient(140deg, var(--c1), var(--c2) ${35 + i * 25}%, var(--c3))`,
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    opacity: 0.9,
                   }}
                 >
                   {i + 1}

@@ -2,33 +2,38 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-// Thirty seconds is the room you get, not the limit. The ring completes at
-// TARGET so the ask stays "thirty seconds", but recording runs on to CEILING —
-// being cut off mid-sentence is worse than saying nothing at all.
+// thirty seconds is the room you get, not the limit. the ring fills at TARGET
+// so the ask stays honest, but recording runs on to CEILING because being cut
+// off mid-sentence is worse than saying nothing.
 const TARGET_MS = 30_000;
 const CEILING_MS = 60_000;
 
-const EMOJI = ["🫂", "☕", "😂", "🌱", "🎧", "🕯️", "🐕", "🍜", "✨", "🙂", "🔥", "🌤️"];
+const EMOJI = ["🫂", "😂", "🌱", "🎧", "🕯️", "🐕", "🍜", "✨", "🙂", "🔥", "🌤️", "🎶"];
 
 type State = "idle" | "recording" | "done" | "denied";
 
+export interface Reply {
+  data?: string;
+  emoji: string;
+  text?: string;
+  seconds: number;
+}
+
 /**
- * Ten seconds of voice, or an emoji.
+ * Thirty seconds of voice, or type it.
  *
- * The emoji path is not a consolation prize — a blocked microphone, a borrowed
- * laptop, a shared room at 1am and a judge who won't grant permissions are all
- * ordinary, and none of them should end the experience. Both paths produce a
- * reply; only the medium differs.
+ * Voice is the default because it does the job better. Typing is not a
+ * consolation prize though: a blocked mic, a shared room at 1am, a borrowed
+ * laptop and someone who just doesn't want to hear their own voice are all
+ * ordinary. A single emoji is a shrug, and nobody feels met by a shrug, so the
+ * typed path takes a joke, a song, a film, whatever you'd have said out loud.
  */
-export function Recorder({
-  onDone,
-}: {
-  onDone: (reply: { data?: string; emoji: string; text?: string; seconds: number }) => void;
-}) {
+export function Recorder({ onDone }: { onDone: (reply: Reply) => void }) {
   const [state, setState] = useState<State>("idle");
   const [elapsed, setElapsed] = useState(0);
-  const [emoji, setEmoji] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [typing, setTyping] = useState(false);
+  const [emoji, setEmoji] = useState<string | null>(null);
   const [text, setText] = useState("");
 
   const recRef = useRef<MediaRecorder | null>(null);
@@ -41,10 +46,10 @@ export function Recorder({
     timer.current = null;
   };
 
-  useEffect(() => () => stopTimer(), []);
+  useEffect(() => stopTimer, []);
 
   const stop = useCallback(() => {
-    recRef.current?.state === "recording" && recRef.current.stop();
+    if (recRef.current?.state === "recording") recRef.current.stop();
   }, []);
 
   const start = useCallback(async () => {
@@ -54,7 +59,9 @@ export function Recorder({
       const rec = new MediaRecorder(stream);
       recRef.current = rec;
 
-      rec.ondataavailable = (e) => e.data.size > 0 && chunks.current.push(e.data);
+      rec.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.current.push(e.data);
+      };
       rec.onstop = () => {
         stopTimer();
         stream.getTracks().forEach((t) => t.stop());
@@ -78,17 +85,21 @@ export function Recorder({
       }, 100);
     } catch {
       setState("denied");
+      setTyping(true);
     }
   }, [stop]);
 
   const seconds = elapsed / 1000;
   const pct = Math.min(1, elapsed / TARGET_MS);
   const over = elapsed > TARGET_MS;
+  const canSendTyped = Boolean(emoji) || text.trim().length >= 2;
 
+  // ---- listen back before it goes ----------------------------------------
   if (state === "done" && preview) {
     return (
-      <div className="flex flex-col items-center gap-4">
-        <audio src={preview} controls className="w-full max-w-xs" aria-label="Your reply" />
+      <div className="flex w-full max-w-sm flex-col items-center gap-4">
+        <audio src={preview} controls className="w-full" aria-label="Your reply" />
+        <p className="text-xs opacity-45">have a listen. you can redo it</p>
         <div className="flex gap-2">
           <button
             type="button"
@@ -96,51 +107,87 @@ export function Recorder({
               setPreview(null);
               setState("idle");
             }}
-            className="rounded-full border border-[var(--line)] px-4 py-2 text-sm opacity-70 hover:opacity-100"
+            className="rounded-full border border-[var(--line)] px-5 py-2.5 text-sm opacity-70 hover:opacity-100"
           >
-            Again
+            again
           </button>
           <button
             type="button"
             onClick={() => onDone({ data: preview, emoji: emoji ?? "🎙️", seconds })}
-            className="rounded-full bg-[var(--ink)] px-6 py-2 text-sm font-medium text-[var(--ground)]"
+            className="warm-btn rounded-full px-7 py-2.5 text-sm font-semibold"
           >
-            Send it
+            send it
           </button>
         </div>
       </div>
     );
   }
 
-  if (state === "denied") {
+  // ---- typed path, either chosen or forced by a blocked mic ---------------
+  if (typing) {
     return (
-      <div className="flex flex-col items-center gap-4">
-        <p className="max-w-xs text-center text-sm opacity-60">
-          no mic? all good. pick one instead.
-        </p>
+      <div className="flex w-full max-w-sm flex-col items-center gap-4">
+        {state === "denied" && (
+          <p className="text-sm opacity-60">no mic, no problem. type it instead.</p>
+        )}
+
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value.slice(0, 240))}
+          rows={4}
+          autoFocus
+          aria-label="Type your reply"
+          placeholder="a joke, a song, a film, or just what you'd have said out loud"
+          className="w-full resize-none rounded-2xl bg-[var(--raise)] p-4 text-[15px] leading-relaxed outline-none placeholder:opacity-40 focus-visible:outline-2 focus-visible:outline-[var(--c2)]"
+          style={{ border: "1px solid var(--line)" }}
+        />
+
+        <div className="flex w-full items-center justify-between px-1">
+          <span className="text-[11px] opacity-35">{240 - text.length} left</span>
+          <span className="text-[11px] opacity-35">and pick one, if you want</span>
+        </div>
+
         <EmojiPad selected={emoji} onSelect={setEmoji} />
-        <button
-          type="button"
-          disabled={!emoji}
-          onClick={() => emoji && onDone({ emoji, seconds: 0 })}
-          className="rounded-full bg-[var(--ink)] px-6 py-2 text-sm font-medium text-[var(--ground)] disabled:opacity-30"
-        >
-          Send it
-        </button>
+
+        <div className="flex gap-2">
+          {state !== "denied" && (
+            <button
+              type="button"
+              onClick={() => setTyping(false)}
+              className="rounded-full border border-[var(--line)] px-5 py-2.5 text-sm opacity-70 hover:opacity-100"
+            >
+              back to voice
+            </button>
+          )}
+          <button
+            type="button"
+            disabled={!canSendTyped}
+            onClick={() =>
+              onDone({ emoji: emoji ?? "🙂", text: text.trim() || undefined, seconds: 0 })
+            }
+            className="warm-btn rounded-full px-7 py-2.5 text-sm font-semibold disabled:opacity-30"
+          >
+            send it
+          </button>
+        </div>
       </div>
     );
   }
 
+  // ---- the default: record ------------------------------------------------
   return (
     <div className="flex flex-col items-center gap-4">
       <button
         type="button"
         onClick={state === "recording" ? stop : start}
         aria-label={state === "recording" ? "Stop recording" : "Record up to thirty seconds"}
-        className="relative grid h-24 w-24 place-items-center rounded-full transition-transform active:scale-95"
+        className="relative grid h-28 w-28 place-items-center rounded-full transition-transform active:scale-95"
         style={{
-          background: state === "recording" ? "var(--warm)" : "var(--ink)",
-          color: "var(--ground)",
+          background:
+            state === "recording"
+              ? "var(--c3)"
+              : "linear-gradient(120deg, var(--c1), var(--c2) 55%, var(--c3))",
+          color: "#fff",
         }}
       >
         {state === "recording" ? (
@@ -151,8 +198,8 @@ export function Recorder({
                 cy="50"
                 r="46"
                 fill="none"
-                stroke="var(--ground)"
-                strokeOpacity={0.35}
+                stroke="#fff"
+                strokeOpacity={0.4}
                 strokeWidth="4"
                 strokeDasharray={`${pct * 289} 289`}
                 strokeLinecap="round"
@@ -175,55 +222,15 @@ export function Recorder({
           : "you've got thirty seconds"}
       </p>
 
-      <details className="text-xs opacity-50">
-        <summary className="cursor-pointer hover:opacity-100">can't talk right now?</summary>
-        <div className="mt-3 flex flex-col items-center gap-3">
-          <EmojiPad selected={emoji} onSelect={setEmoji} />
-          <button
-            type="button"
-            disabled={!emoji}
-            onClick={() => emoji && onDone({ emoji, seconds: 0 })}
-            className="rounded-full border border-[var(--line)] px-4 py-1.5 disabled:opacity-30"
-          >
-            Send this instead
-          </button>
-        </div>
-      </details>
-    </div>
-  );
-}
-
-/**
- * The no-mic path.
- *
- * Voice is the default because it does the job better, but a single emoji is a
- * shrug and nobody feels met by a shrug. So this takes a joke, a song, a film,
- * or whatever you would have said out loud. Same exchange, typed.
- */
-function TypedReply({
-  emoji,
-  setEmoji,
-  text,
-  setText,
-}: {
-  emoji: string | null;
-  setEmoji: (e: string) => void;
-  text: string;
-  setText: (t: string) => void;
-}) {
-  return (
-    <div className="flex w-full max-w-sm flex-col items-center gap-3">
-      <EmojiPad selected={emoji} onSelect={setEmoji} />
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value.slice(0, 240))}
-        rows={3}
-        aria-label="Type your reply"
-        placeholder="a joke, a song, a film, or just what you'd have said"
-        className="w-full resize-none rounded-2xl bg-[var(--raise)] p-3 text-[15px] leading-relaxed outline-none placeholder:opacity-40 focus-visible:outline-2 focus-visible:outline-[var(--c2)]"
-        style={{ border: "1px solid var(--line)" }}
-      />
-      <p className="text-[11px] opacity-35">{240 - text.length} left</p>
+      {state !== "recording" && (
+        <button
+          type="button"
+          onClick={() => setTyping(true)}
+          className="rounded-full border border-[var(--line)] px-5 py-2.5 text-sm opacity-70 transition-opacity hover:opacity-100"
+        >
+          or type it instead
+        </button>
+      )}
     </div>
   );
 }
@@ -236,7 +243,7 @@ function EmojiPad({
   onSelect: (e: string) => void;
 }) {
   return (
-    <div className="grid grid-cols-6 gap-1.5" role="group" aria-label="Pick an emoji reply">
+    <div className="grid grid-cols-6 gap-1.5" role="group" aria-label="Pick an emoji">
       {EMOJI.map((e) => (
         <button
           key={e}
@@ -245,8 +252,8 @@ function EmojiPad({
           aria-pressed={selected === e}
           className="grid h-10 w-10 place-items-center rounded-xl text-xl transition-transform hover:scale-110"
           style={{
-            background: selected === e ? "var(--warm)" : "var(--raise)",
-            outline: selected === e ? "2px solid var(--ink)" : "none",
+            background: selected === e ? "var(--c2)" : "var(--raise)",
+            outline: selected === e ? "2px solid var(--c2)" : "none",
           }}
         >
           {e}

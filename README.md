@@ -5,18 +5,22 @@ Live: https://same-day-seven.vercel.app
 ## What it is
 
 Draw the shape of your day as five points. You are matched with one person whose
-day had the same shape. You record ten seconds for them before you hear theirs.
-Then you draw your day again, and the app shows the difference between the two
-curves.
+day had the same shape. You record thirty seconds for them before you hear
+theirs. Then you mark where you are right now, and the app shows the distance
+between that and where your day ended.
+
+The day itself is never redrawn. Hearing from a stranger does not retroactively
+change what your afternoon was, and asking someone to redraw it invites them to
+lie about their own morning.
 
 ## The loop
 
 1. `/` — draw five points, morning to night
 2. match — closest day in the pool, by Euclidean distance over the five points
-3. give — ten seconds of voice, or an emoji if the mic is unavailable
+3. give — thirty seconds of voice, or type it (a joke, a song, a film)
 4. receive — their clip
-5. draw again — same five points
-6. result — before and after on one axis, and the delta
+5. right now — the day is locked; you add one more point for where you are now
+6. result — the day plus that point, and the distance between them
 
 ## Run it
 
@@ -36,11 +40,14 @@ and downloads each as the filename `lib/seeds.ts` expects. Drop them into
 ## Files
 
 ```
-lib/curve.ts                 five-point day, banding, distance, delta, colour
-lib/seeds.ts                 the starting pool — real recordings, with prompts
-lib/pool.ts                  match, store, smile count (storage isolated here)
+lib/curve.ts                 five-point day, banding, distance, the now-delta
+lib/prompts.ts               which ask you get, from both days
+lib/seeds.ts                 the starting pool: real recordings
+lib/pool.ts                  match, store, block, history, smiles
 components/CurveCanvas.tsx   the draggable curve, with keyboard controls
-components/Recorder.tsx      ten-second recorder + emoji fallback
+components/Recorder.tsx      thirty-second recorder, or type it instead
+components/Waveform.tsx      their voice, drawn while it plays
+components/Logo.tsx          the mark, and the once-per-session intro
 app/page.tsx                 the loop
 app/seed/page.tsx            builder tool for recording the pool
 ```
@@ -49,21 +56,23 @@ app/seed/page.tsx            builder tool for recording the pool
 
 - The starting pool is seeded by the builder. It is real human voice, not
   generated, but it is not yet a crowd.
-- Clips recorded in the app are stored in that browser's `localStorage`. A
-  shared server-side pool is the next step; it only has to replace the four
+- Clips recorded in the app are stored in that browser's `localStorage`. So is
+  your history and the smile tally, which means the board is per-device. A
+  shared server-side pool is the next step and only has to replace the storage
   functions in `lib/pool.ts`.
-- The before/after delta is one person's own drawing, four minutes apart. It is
-  a self-report, not a clinical measure, and it moves for reasons other than the
+- The delta is one person's own drawing, four minutes apart. It is a
+  self-report, not a clinical measure, and it moves for reasons other than the
   clip.
 - Matching is arithmetic over five numbers. No model decides how anyone feels.
-- There is no live channel, so there is no live moderation problem — but there
-  is also no report-and-remove flow yet.
+- One tap pulls a clip and it is never served to you again. There is no live
+  channel and no public text, so a clip you opted into hearing is the whole
+  attack surface. What is missing is human review of a shared pool.
 
 ## Accessibility
 
-- Every curve point has ▲/▼ buttons — the drag is not the only way in.
-- The emoji path is a full alternative to voice, not a downgrade.
-- Captions accompany every seeded clip.
+- Every curve point has up/down buttons, so dragging is not the only way in.
+- Typing is a full alternative to voice: emoji, or 240 characters, or both.
+- Every seeded clip carries a caption for anyone who cannot play audio.
 - `prefers-reduced-motion` and `prefers-color-scheme` are both respected.
 
 ## AI use
